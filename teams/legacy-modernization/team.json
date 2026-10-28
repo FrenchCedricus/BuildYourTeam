@@ -1,0 +1,16 @@
+{
+  "name": "legacy-modernization",
+  "version": "1.0.0",
+  "description": "A refactoring team for old or messy code: understand it, lock its behaviour with tests, then modernise it in small safe steps.",
+  "author": "FrenchCedricus",
+  "tags": ["refactoring", "legacy", "migration", "tech-debt", "modernization"],
+  "lead": "lead",
+  "mode": "subagents",
+  "agents": [
+    { "name": "lead", "enabled": true },
+    { "name": "code-archaeologist", "enabled": true },
+    { "name": "test-guardian", "enabled": true },
+    { "name": "refactorer", "enabled": true },
+    { "name": "migration-reviewer", "enabled": true }
+  ]
+}

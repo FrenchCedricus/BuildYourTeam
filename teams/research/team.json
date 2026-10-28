@@ -1,0 +1,16 @@
+{
+  "name": "research",
+  "version": "1.0.0",
+  "description": "A research team: scope a question, gather sources from the web and local files, analyse them, fact-check claims and write a cited report.",
+  "author": "FrenchCedricus",
+  "tags": ["research", "analysis", "fact-checking", "report", "web"],
+  "lead": "lead",
+  "mode": "subagents",
+  "agents": [
+    { "name": "lead", "enabled": true },
+    { "name": "scout", "enabled": true },
+    { "name": "analyst", "enabled": true },
+    { "name": "fact-checker", "enabled": true },
+    { "name": "report-writer", "enabled": true }
+  ]
+}

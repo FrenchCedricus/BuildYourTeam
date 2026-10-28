@@ -1,0 +1,16 @@
+{
+  "name": "documentation",
+  "version": "1.0.0",
+  "description": "A docs team: information architecture, API reference, tutorials and guides, and an accuracy review against the code.",
+  "author": "FrenchCedricus",
+  "tags": ["docs", "documentation", "api", "tutorials", "technical-writing"],
+  "lead": "lead",
+  "mode": "subagents",
+  "agents": [
+    { "name": "lead", "enabled": true },
+    { "name": "doc-architect", "enabled": true },
+    { "name": "api-documenter", "enabled": true },
+    { "name": "tutorial-writer", "enabled": true },
+    { "name": "doc-reviewer", "enabled": true }
+  ]
+}

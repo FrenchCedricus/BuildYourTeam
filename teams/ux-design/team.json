@@ -1,0 +1,16 @@
+{
+  "name": "ux-design",
+  "version": "1.0.0",
+  "description": "A design team: UX audit, interaction design, UI implementation with a design system, and accessibility review.",
+  "author": "FrenchCedricus",
+  "tags": ["design", "ux", "ui", "accessibility", "design-system"],
+  "lead": "lead",
+  "mode": "subagents",
+  "agents": [
+    { "name": "lead", "enabled": true },
+    { "name": "ux-auditor", "enabled": true },
+    { "name": "interaction-designer", "enabled": true },
+    { "name": "ui-engineer", "enabled": true },
+    { "name": "accessibility-reviewer", "enabled": true }
+  ]
+}

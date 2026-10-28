@@ -1,0 +1,16 @@
+{
+  "name": "product-management",
+  "version": "1.0.0",
+  "description": "A product team: user research, opportunity sizing, specs with acceptance criteria and a prioritised roadmap.",
+  "author": "FrenchCedricus",
+  "tags": ["product", "pm", "specs", "roadmap", "user-research"],
+  "lead": "lead",
+  "mode": "subagents",
+  "agents": [
+    { "name": "lead", "enabled": true },
+    { "name": "user-researcher", "enabled": true },
+    { "name": "product-analyst", "enabled": true },
+    { "name": "spec-writer", "enabled": true },
+    { "name": "roadmap-planner", "enabled": true }
+  ]
+}

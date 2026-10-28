@@ -33,6 +33,131 @@
       ]
     },
     {
+      "name": "content-marketing",
+      "version": "1.0.0",
+      "description": "A content team: research, writing, SEO and copy editing for articles, landing pages and newsletters.",
+      "author": "FrenchCedricus",
+      "tags": [
+        "content",
+        "marketing",
+        "writing",
+        "seo",
+        "copywriting"
+      ],
+      "mode": "subagents",
+      "lead": "lead",
+      "agents": [
+        "lead",
+        "researcher",
+        "writer",
+        "seo-specialist",
+        "copy-editor"
+      ],
+      "path": "teams/content-marketing",
+      "files": [
+        "team.json",
+        "agents/lead.md",
+        "agents/researcher.md",
+        "agents/writer.md",
+        "agents/seo-specialist.md",
+        "agents/copy-editor.md"
+      ]
+    },
+    {
+      "name": "data-science",
+      "version": "1.0.0",
+      "description": "A data team: pipelines, exploratory analysis, machine learning models and a statistical sanity check.",
+      "author": "FrenchCedricus",
+      "tags": [
+        "data",
+        "analytics",
+        "machine-learning",
+        "python",
+        "sql"
+      ],
+      "mode": "subagents",
+      "lead": "lead",
+      "agents": [
+        "lead",
+        "data-engineer",
+        "data-analyst",
+        "ml-engineer",
+        "stats-reviewer"
+      ],
+      "path": "teams/data-science",
+      "files": [
+        "team.json",
+        "agents/lead.md",
+        "agents/data-engineer.md",
+        "agents/data-analyst.md",
+        "agents/ml-engineer.md",
+        "agents/stats-reviewer.md"
+      ]
+    },
+    {
+      "name": "devops",
+      "version": "1.0.0",
+      "description": "A platform team: CI/CD pipelines, infrastructure as code, reliability and observability, with a read-only configuration audit.",
+      "author": "FrenchCedricus",
+      "tags": [
+        "devops",
+        "ci-cd",
+        "infrastructure",
+        "docker",
+        "kubernetes",
+        "sre"
+      ],
+      "mode": "subagents",
+      "lead": "lead",
+      "agents": [
+        "lead",
+        "ci-engineer",
+        "infra-engineer",
+        "reliability-engineer",
+        "config-auditor"
+      ],
+      "path": "teams/devops",
+      "files": [
+        "team.json",
+        "agents/lead.md",
+        "agents/ci-engineer.md",
+        "agents/infra-engineer.md",
+        "agents/reliability-engineer.md",
+        "agents/config-auditor.md"
+      ]
+    },
+    {
+      "name": "documentation",
+      "version": "1.0.0",
+      "description": "A docs team: information architecture, API reference, tutorials and guides, and an accuracy review against the code.",
+      "author": "FrenchCedricus",
+      "tags": [
+        "docs",
+        "documentation",
+        "api",
+        "tutorials",
+        "technical-writing"
+      ],
+      "mode": "subagents",
+      "lead": "lead",
+      "agents": [
+        "lead",
+        "doc-architect",
+        "api-documenter",
+        "tutorial-writer",
+        "doc-reviewer"
+      ],
+      "path": "teams/documentation",
+      "files": [
+        "team.json",
+        "agents/lead.md",
+        "agents/doc-architect.md",
+        "agents/api-documenter.md",
+        "agents/tutorial-writer.md",
+        "agents/doc-reviewer.md"
+      ]
+    },
+    {
       "name": "game-dev",
       "version": "1.0.0",
       "description": "A small game studio: game design, gameplay programming, level design and playtesting.",
@@ -61,6 +186,161 @@
         "agents/gameplay-dev.md",
         "agents/level-designer.md",
         "agents/playtester.md"
+      ]
+    },
+    {
+      "name": "legacy-modernization",
+      "version": "1.0.0",
+      "description": "A refactoring team for old or messy code: understand it, lock its behaviour with tests, then modernise it in small safe steps.",
+      "author": "FrenchCedricus",
+      "tags": [
+        "refactoring",
+        "legacy",
+        "migration",
+        "tech-debt",
+        "modernization"
+      ],
+      "mode": "subagents",
+      "lead": "lead",
+      "agents": [
+        "lead",
+        "code-archaeologist",
+        "test-guardian",
+        "refactorer",
+        "migration-reviewer"
+      ],
+      "path": "teams/legacy-modernization",
+      "files": [
+        "team.json",
+        "agents/lead.md",
+        "agents/code-archaeologist.md",
+        "agents/test-guardian.md",
+        "agents/refactorer.md",
+        "agents/migration-reviewer.md"
+      ]
+    },
+    {
+      "name": "mobile-app",
+      "version": "1.0.0",
+      "description": "A mobile app team: UX flows, native or cross-platform screens, API integration and device-focused testing.",
+      "author": "FrenchCedricus",
+      "tags": [
+        "mobile",
+        "ios",
+        "android",
+        "react-native",
+        "flutter"
+      ],
+      "mode": "subagents",
+      "lead": "lead",
+      "agents": [
+        "lead",
+        "ux-designer",
+        "mobile-dev",
+        "api-integrator",
+        "mobile-tester"
+      ],
+      "path": "teams/mobile-app",
+      "files": [
+        "team.json",
+        "agents/lead.md",
+        "agents/ux-designer.md",
+        "agents/mobile-dev.md",
+        "agents/api-integrator.md",
+        "agents/mobile-tester.md"
+      ]
+    },
+    {
+      "name": "product-management",
+      "version": "1.0.0",
+      "description": "A product team: user research, opportunity sizing, specs with acceptance criteria and a prioritised roadmap.",
+      "author": "FrenchCedricus",
+      "tags": [
+        "product",
+        "pm",
+        "specs",
+        "roadmap",
+        "user-research"
+      ],
+      "mode": "subagents",
+      "lead": "lead",
+      "agents": [
+        "lead",
+        "user-researcher",
+        "product-analyst",
+        "spec-writer",
+        "roadmap-planner"
+      ],
+      "path": "teams/product-management",
+      "files": [
+        "team.json",
+        "agents/lead.md",
+        "agents/user-researcher.md",
+        "agents/product-analyst.md",
+        "agents/spec-writer.md",
+        "agents/roadmap-planner.md"
+      ]
+    },
+    {
+      "name": "research",
+      "version": "1.0.0",
+      "description": "A research team: scope a question, gather sources from the web and local files, analyse them, fact-check claims and write a cited report.",
+      "author": "FrenchCedricus",
+      "tags": [
+        "research",
+        "analysis",
+        "fact-checking",
+        "report",
+        "web"
+      ],
+      "mode": "subagents",
+      "lead": "lead",
+      "agents": [
+        "lead",
+        "scout",
+        "analyst",
+        "fact-checker",
+        "report-writer"
+      ],
+      "path": "teams/research",
+      "files": [
+        "team.json",
+        "agents/lead.md",
+        "agents/scout.md",
+        "agents/analyst.md",
+        "agents/fact-checker.md",
+        "agents/report-writer.md"
+      ]
+    },
+    {
+      "name": "security-audit",
+      "version": "1.0.0",
+      "description": "A defensive security review of your own codebase: threat model, code audit, dependency audit and a prioritised remediation plan.",
+      "author": "FrenchCedricus",
+      "tags": [
+        "security",
+        "audit",
+        "appsec",
+        "dependencies",
+        "owasp"
+      ],
+      "mode": "subagents",
+      "lead": "lead",
+      "agents": [
+        "lead",
+        "threat-modeler",
+        "code-auditor",
+        "dependency-auditor",
+        "remediation-advisor"
+      ],
+      "path": "teams/security-audit",
+      "files": [
+        "team.json",
+        "agents/lead.md",
+        "agents/threat-modeler.md",
+        "agents/code-auditor.md",
+        "agents/dependency-auditor.md",
+        "agents/remediation-advisor.md"
       ]
     },
     {
@@ -125,6 +405,37 @@
         "agents/unit-tester.md",
         "agents/e2e-tester.md",
         "agents/bug-hunter.md"
+      ]
+    },
+    {
+      "name": "ux-design",
+      "version": "1.0.0",
+      "description": "A design team: UX audit, interaction design, UI implementation with a design system, and accessibility review.",
+      "author": "FrenchCedricus",
+      "tags": [
+        "design",
+        "ux",
+        "ui",
+        "accessibility",
+        "design-system"
+      ],
+      "mode": "subagents",
+      "lead": "lead",
+      "agents": [
+        "lead",
+        "ux-auditor",
+        "interaction-designer",
+        "ui-engineer",
+        "accessibility-reviewer"
+      ],
+      "path": "teams/ux-design",
+      "files": [
+        "team.json",
+        "agents/lead.md",
+        "agents/ux-auditor.md",
+        "agents/interaction-designer.md",
+        "agents/ui-engineer.md",
+        "agents/accessibility-reviewer.md"
       ]
     }
   ]

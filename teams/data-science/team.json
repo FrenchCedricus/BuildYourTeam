@@ -1,0 +1,16 @@
+{
+  "name": "data-science",
+  "version": "1.0.0",
+  "description": "A data team: pipelines, exploratory analysis, machine learning models and a statistical sanity check.",
+  "author": "FrenchCedricus",
+  "tags": ["data", "analytics", "machine-learning", "python", "sql"],
+  "lead": "lead",
+  "mode": "subagents",
+  "agents": [
+    { "name": "lead", "enabled": true },
+    { "name": "data-engineer", "enabled": true },
+    { "name": "data-analyst", "enabled": true },
+    { "name": "ml-engineer", "enabled": true },
+    { "name": "stats-reviewer", "enabled": true }
+  ]
+}

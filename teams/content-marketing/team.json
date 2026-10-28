@@ -1,0 +1,16 @@
+{
+  "name": "content-marketing",
+  "version": "1.0.0",
+  "description": "A content team: research, writing, SEO and copy editing for articles, landing pages and newsletters.",
+  "author": "FrenchCedricus",
+  "tags": ["content", "marketing", "writing", "seo", "copywriting"],
+  "lead": "lead",
+  "mode": "subagents",
+  "agents": [
+    { "name": "lead", "enabled": true },
+    { "name": "researcher", "enabled": true },
+    { "name": "writer", "enabled": true },
+    { "name": "seo-specialist", "enabled": true },
+    { "name": "copy-editor", "enabled": true }
+  ]
+}

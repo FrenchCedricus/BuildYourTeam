@@ -1,0 +1,16 @@
+{
+  "name": "security-audit",
+  "version": "1.0.0",
+  "description": "A defensive security review of your own codebase: threat model, code audit, dependency audit and a prioritised remediation plan.",
+  "author": "FrenchCedricus",
+  "tags": ["security", "audit", "appsec", "dependencies", "owasp"],
+  "lead": "lead",
+  "mode": "subagents",
+  "agents": [
+    { "name": "lead", "enabled": true },
+    { "name": "threat-modeler", "enabled": true },
+    { "name": "code-auditor", "enabled": true },
+    { "name": "dependency-auditor", "enabled": true },
+    { "name": "remediation-advisor", "enabled": true }
+  ]
+}

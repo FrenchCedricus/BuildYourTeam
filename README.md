@@ -71,16 +71,26 @@ The installer copies the skill to `~/.claude/skills/byt/` and creates `~/.byt/`.
 
 **Options:** `--project` / `--global` (where to install), `--from <team>` (start `new` from an existing team), `--json` (machine-readable output), `--force`.
 
-## Starter teams
+## Teams in the registry
 
-| Team | Agents |
-| --- | --- |
-| `software-dev` | lead, architect, backend, frontend, reviewer, docs |
-| `game-dev` | lead, game-designer, gameplay-dev, level-designer, playtester |
-| `testing` | lead, test-planner, unit-tester, e2e-tester, bug-hunter |
-| `brainstorming` | facilitator, visionary, critic, pragmatist, synthesizer |
+| Team | For | Agents |
+| --- | --- | --- |
+| `software-dev` | Building features | lead, architect, backend, frontend, reviewer, docs |
+| `testing` | QA and debugging | lead, test-planner, unit-tester, e2e-tester, bug-hunter |
+| `legacy-modernization` | Refactoring old code safely | lead, code-archaeologist, test-guardian, refactorer, migration-reviewer |
+| `devops` | CI/CD and infrastructure | lead, ci-engineer, infra-engineer, reliability-engineer, config-auditor |
+| `security-audit` | Defensive review of your code | lead, threat-modeler, code-auditor, dependency-auditor, remediation-advisor |
+| `mobile-app` | iOS and Android apps | lead, ux-designer, mobile-dev, api-integrator, mobile-tester |
+| `ux-design` | Usability and UI | lead, ux-auditor, interaction-designer, ui-engineer, accessibility-reviewer |
+| `data-science` | Analysis and ML | lead, data-engineer, data-analyst, ml-engineer, stats-reviewer |
+| `game-dev` | Making games | lead, game-designer, gameplay-dev, level-designer, playtester |
+| `documentation` | Docs that match the code | lead, doc-architect, api-documenter, tutorial-writer, doc-reviewer |
+| `product-management` | Specs and roadmaps | lead, user-researcher, product-analyst, spec-writer, roadmap-planner |
+| `research` | Cited research reports | lead, scout, analyst, fact-checker, report-writer |
+| `content-marketing` | Articles and SEO | lead, researcher, writer, seo-specialist, copy-editor |
+| `brainstorming` | Ideas and decisions | facilitator, visionary, critic, pragmatist, synthesizer |
 
-Each agent gets only the tools its role needs. Reviewers, planners and the brainstorming panel are read-only. Only the roles that must run commands get `Bash`.
+Each agent gets only the tools its role needs. Leads, reviewers and auditors are read-only. Only the roles that must run commands get `Bash`, and only research roles get web access.
 
 ## Create your own team
 

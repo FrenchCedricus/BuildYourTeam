@@ -1,0 +1,16 @@
+{
+  "name": "mobile-app",
+  "version": "1.0.0",
+  "description": "A mobile app team: UX flows, native or cross-platform screens, API integration and device-focused testing.",
+  "author": "FrenchCedricus",
+  "tags": ["mobile", "ios", "android", "react-native", "flutter"],
+  "lead": "lead",
+  "mode": "subagents",
+  "agents": [
+    { "name": "lead", "enabled": true },
+    { "name": "ux-designer", "enabled": true },
+    { "name": "mobile-dev", "enabled": true },
+    { "name": "api-integrator", "enabled": true },
+    { "name": "mobile-tester", "enabled": true }
+  ]
+}

@@ -17,11 +17,22 @@ test('les teams du repo sont valides en mode strict', () => {
 
 test('les agents en lecture seule n\'ont ni Edit, ni Write, ni Bash', () => {
   const readOnly = {
-    'software-dev': ['lead', 'architect', 'reviewer'],
-    testing: ['lead', 'test-planner'],
-    'game-dev': ['lead'],
-    brainstorming: ['facilitator', 'visionary', 'critic', 'pragmatist', 'synthesizer'],
+    'software-dev': ['architect', 'reviewer'],
+    testing: ['test-planner'],
+    brainstorming: ['visionary', 'critic', 'pragmatist', 'synthesizer'],
+    'data-science': ['stats-reviewer'],
+    devops: ['config-auditor'],
+    'security-audit': ['threat-modeler', 'code-auditor', 'remediation-advisor'],
+    documentation: ['doc-architect'],
+    'legacy-modernization': ['migration-reviewer'],
+    research: ['analyst'],
+    'ux-design': ['ux-auditor'],
   };
+  // Tous les leads coordonnent sans modifier ni exécuter quoi que ce soit.
+  for (const team of fs.readdirSync(path.join(REPO_ROOT, 'teams'))) {
+    const lead = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'teams', team, 'team.json'), 'utf8')).lead;
+    readOnly[team] = [...new Set([...(readOnly[team] ?? []), lead])];
+  }
   for (const [team, agents] of Object.entries(readOnly)) {
     for (const a of agents) {
       const fm = parseFrontmatter(fs.readFileSync(path.join(REPO_ROOT, 'teams', team, 'agents', `${a}.md`), 'utf8'));

@@ -1,0 +1,16 @@
+{
+  "name": "devops",
+  "version": "1.0.0",
+  "description": "A platform team: CI/CD pipelines, infrastructure as code, reliability and observability, with a read-only configuration audit.",
+  "author": "FrenchCedricus",
+  "tags": ["devops", "ci-cd", "infrastructure", "docker", "kubernetes", "sre"],
+  "lead": "lead",
+  "mode": "subagents",
+  "agents": [
+    { "name": "lead", "enabled": true },
+    { "name": "ci-engineer", "enabled": true },
+    { "name": "infra-engineer", "enabled": true },
+    { "name": "reliability-engineer", "enabled": true },
+    { "name": "config-auditor", "enabled": true }
+  ]
+}
