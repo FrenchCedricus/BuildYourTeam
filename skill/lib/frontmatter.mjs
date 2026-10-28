@@ -28,7 +28,10 @@ function unquote(v) {
 
 function quoteIfNeeded(v) {
   const s = String(v);
-  if (s === '' || /[:#\n"'{}[\],&*!|>%@`]/.test(s) || /^\s|\s$/.test(s)) return JSON.stringify(s);
+  // Guillemets seulement quand YAML l'exige : « Read, Grep, Glob » reste un scalaire simple.
+  if (s === '' || /: |\s#|\n/.test(s) || s.endsWith(':') || /^[\s\-?:,[\]{}#&*!|>'"%@`]/.test(s) || /\s$/.test(s)) {
+    return JSON.stringify(s);
+  }
   return s;
 }
 

@@ -8,6 +8,8 @@ import { fetchRegistry, findEntry, downloadTeam, searchRegistry } from './regist
 import { loadConfig, setConfig, CONFIG_KEYS } from './config.mjs';
 import { loadState, saveState } from './state.mjs';
 import { readJson, exists, removeDir, replaceDir, tempDirIn } from './fsutil.mjs';
+import { parseData, createTeam, addAgent, removeAgent } from './builder.mjs';
+import { createPrompter, runNewWizard, runAddAgentWizard } from './wizard.mjs';
 import { table } from './format.mjs';
 
 export const VERSION = '0.1.0';
@@ -555,6 +557,185 @@ async function info(ctx, args) {
   return { data: d, text: lines.join('\n') };
 }
 
+// ---------------------------------------------------------------- création de teams
+
+function readStdin(stream) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    stream.on('data', (d) => chunks.push(Buffer.from(d)));
+    stream.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+    stream.on('error', reject);
+    stream.resume?.();
+  });
+}
+
+async function readData(ctx, args) {
+  const raw = args.flags.data === '-' ? await readStdin(ctx.io.stdin) : args.flags.data;
+  return parseData(raw, args.flags.data === '-' ? 'stdin' : '--data');
+}
+
+function requireInteractive(ctx, args, usage) {
+  if (args.flags.json) {
+    throw new BytError('DATA_REQUIRED', 'En mode --json, les données doivent être fournies avec --data.', `Usage : ${usage}`);
+  }
+}
+
+// Résout une team servant de point de départ : installée, sinon téléchargée du registry.
+async function resolveBase(ctx, name, scope, cache) {
+  if (cache.has(name)) return cache.get(name);
+  const found = findInstalled(ctx, name);
+  let base;
+  if (found) {
+    base = { dir: found.dir, team: loadTeam(found.dir), cleanup: () => {} };
+  } else {
+    let registry;
+    try {
+      registry = await fetchRegistry(ctx);
+    } catch {
+      throw errors.teamNotInstalled(name);
+    }
+    const entry = findEntry(registry, name);
+    if (!entry) throw errors.teamNotInRegistry(name);
+    const { tmp, team } = await stageFromRegistry(registry, entry, scopePaths(ctx, scope).teamsDir);
+    base = { dir: tmp, team, cleanup: () => removeDir(tmp) };
+  }
+  cache.set(name, base);
+  return base;
+}
+
+async function wizardSources(ctx) {
+  const installed = installedNames(ctx);
+  const sources = [...installed.keys()].map((name) => ({ name, label: `${name} ${ctx.c.dim('(installée)')}` }));
+  try {
+    const registry = await fetchRegistry(ctx);
+    for (const t of registry.teams) {
+      if (!installed.has(t.name)) sources.push({ name: t.name, label: `${t.name} ${ctx.c.dim('(registry) — ' + t.description)}` });
+    }
+  } catch {
+    // registry injoignable : on propose seulement les teams installées
+  }
+  return sources;
+}
+
+function formatAgents(c, agents) {
+  return table(
+    agents.map((a) => [
+      c.bold(a.name) + (a.lead ? c.dim(' (lead)') : ''),
+      a.role,
+      c.dim(a.tools.join(', ')),
+      a.model,
+    ])
+  );
+}
+
+async function newTeam(ctx, args) {
+  const { c } = ctx;
+  const usage = 'byt new [team] --data \'<json>\' [--from <team>] [--global]';
+  const scope = resolveScope(ctx, args.flags, 'project');
+  const cache = new Map();
+  let data;
+  let fromName = args.flags.from;
+
+  try {
+    if (args.flags.data !== undefined) {
+      data = await readData(ctx, args);
+      if (args._[0]) data.name = args._[0];
+      fromName = fromName ?? data.from;
+    } else {
+      requireInteractive(ctx, args, usage);
+      const prompter = createPrompter(ctx.io.stdin, ctx.io.stdout);
+      let result;
+      try {
+        const sources = fromName ? [] : await wizardSources(ctx);
+        result = await runNewWizard({
+          prompter,
+          c,
+          name: args._[0],
+          sources,
+          loadSource: async (n) => {
+            const base = await resolveBase(ctx, n, scope, cache);
+            return {
+              team: base.team,
+              agents: base.team.agents.map((a) => ({ name: a.name, ...(readAgent(base.dir, a.name)?.frontmatter ?? {}) })),
+            };
+          },
+        });
+      } finally {
+        prompter.close();
+      }
+      if (!result) return { data: { cancelled: true }, text: 'Création annulée : aucun fichier écrit.' };
+      data = result.data;
+      fromName = result.from ?? fromName;
+    }
+
+    const base = fromName ? await resolveBase(ctx, fromName, scope, cache) : null;
+    const r = createTeam(ctx, data, { scope, base, force: Boolean(args.flags.force) });
+    const lines = [
+      `${c.green('✔')} Team ${c.bold(r.team)} ${c.dim('v' + r.version)} créée (${scopeLabel(r.scope)}, locale${r.from ? `, à partir de ${r.from}` : ''}).`,
+      '',
+      formatAgents(c, r.agents),
+      '',
+      `${c.green('✔')} validate : team valide`,
+      ...r.validation.warnings.map((w) => `  ${c.yellow('attention')}  ${w}`),
+      formatSync(c, r.sync),
+      '',
+      `${c.dim('→')} Activer : /byt use ${r.team}`,
+      `${c.dim('→')} Lancer  : /byt run ${r.team} <tâche>`,
+      c.dim(`Prompts modifiables dans ${path.join(r.dir, 'agents')}`),
+    ];
+    return { data: { ...r, next: [`/byt use ${r.team}`, `/byt run ${r.team} <tâche>`] }, text: lines.join('\n') };
+  } finally {
+    for (const base of cache.values()) base.cleanup();
+  }
+}
+
+async function addAgentCmd(ctx, args) {
+  const { c } = ctx;
+  const usage = 'byt add-agent <team> --data \'{"name":"...","role":"...","access":"read|write|exec","model":"sonnet"}\'';
+  let spec;
+  let teamName = args._[0];
+  if (args.flags.data !== undefined) {
+    spec = await readData(ctx, args);
+    teamName = teamName ?? spec.team;
+    delete spec.team;
+  }
+  if (!teamName) throw errors.usage(usage);
+  const found = requireInstalled(ctx, teamName, args.flags);
+  if (!spec) {
+    requireInteractive(ctx, args, usage);
+    const prompter = createPrompter(ctx.io.stdin, ctx.io.stdout);
+    try {
+      spec = await runAddAgentWizard({ prompter, c, team: teamName });
+    } finally {
+      prompter.close();
+    }
+  }
+  const r = addAgent(ctx, found, spec);
+  const warnings = [...r.validation.warnings];
+  if (found.info.source !== 'local') {
+    warnings.push(`La team « ${teamName} » vient du registry : un update écrasera cet ajout. Pour la personnaliser durablement : byt new ma-team --from ${teamName}`);
+  }
+  const lines = [
+    `${c.green('✔')} Agent ${c.bold(r.agent.name)} ajouté à ${c.bold(teamName)}.`,
+    formatAgents(c, [r.agent]),
+    ...warnings.map((w) => `  ${c.yellow('attention')}  ${w}`),
+    formatSync(c, r.sync),
+  ];
+  return { data: { ...r, warnings }, text: lines.join('\n') };
+}
+
+function removeAgentCmd(ctx, args) {
+  const { c } = ctx;
+  const [teamName, agentName] = args._;
+  if (!teamName || !agentName) throw errors.usage('byt remove-agent <team> <agent>');
+  const found = requireInstalled(ctx, teamName, args.flags);
+  const r = removeAgent(ctx, found, agentName);
+  return {
+    data: r,
+    text: [`${c.green('✔')} Agent ${c.bold(agentName)} retiré de ${c.bold(teamName)}.`, formatSync(c, r.sync)].join('\n'),
+  };
+}
+
 function runCmd() {
   throw new BytError(
     'RUN_REQUIRES_CLAUDE',
@@ -574,6 +755,9 @@ export const COMMANDS = {
   uninstall,
   update,
   run: runCmd,
+  new: newTeam,
+  'add-agent': addAgentCmd,
+  'remove-agent': removeAgentCmd,
   config,
   validate,
   enable,

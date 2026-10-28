@@ -22,7 +22,7 @@ test('frontmatter : setFrontmatterField ne modifie que la clé visée', () => {
 
 test('frontmatter : renderFrontmatter met entre guillemets si nécessaire', () => {
   const out = renderFrontmatter({ name: 'x', description: 'Role: test', tools: ['Read', 'Grep'] }, 'Hello');
-  assert.equal(out, '---\nname: x\ndescription: "Role: test"\ntools: "Read, Grep"\n---\n\nHello\n');
+  assert.equal(out, '---\nname: x\ndescription: "Role: test"\ntools: Read, Grep\n---\n\nHello\n');
   assert.equal(parseFrontmatter(out).data.tools, 'Read, Grep');
 });
 

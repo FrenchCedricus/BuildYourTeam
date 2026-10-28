@@ -39,7 +39,8 @@ export function sandbox() {
   }
 
   async function bytJson(...argv) {
-    const r = await byt(...argv, '--json');
+    const opts = typeof argv.at(-1) === 'object' ? argv.pop() : {};
+    const r = await byt(...argv, '--json', opts);
     try {
       return { ...r, json: JSON.parse(r.stdout) };
     } catch {
