@@ -1,6 +1,7 @@
 import path from 'node:path';
-import { errors, scopeLabel } from './errors.mjs';
-import { availableScopes, scopePaths } from './context.mjs';
+import { BytError, errors, scopeLabel } from './errors.mjs';
+import { availableScopes, scopePaths, searchScopes } from './context.mjs';
+import { validateTeam } from './team.mjs';
 import { loadConfig, setConfig, CONFIG_KEYS } from './config.mjs';
 import { loadState } from './state.mjs';
 import { readJson, exists } from './fsutil.mjs';
@@ -152,9 +153,77 @@ function config(ctx, args) {
   };
 }
 
+// ---------------------------------------------------------------- recherche d'une team installée
+
+// Cherche la team dans les portées autorisées (projet d'abord, puis global).
+export function findInstalled(ctx, name, flags = {}) {
+  for (const scope of searchScopes(ctx, flags)) {
+    const sp = scopePaths(ctx, scope);
+    const state = loadState(sp);
+    const dir = path.join(sp.teamsDir, name);
+    if (state.teams[name] && exists(path.join(dir, 'team.json'))) {
+      return { scope, sp, state, dir, info: state.teams[name] };
+    }
+  }
+  return null;
+}
+
+export function requireInstalled(ctx, name, flags) {
+  if (!name) throw errors.usage('byt <commande> <team>');
+  const found = findInstalled(ctx, name, flags);
+  if (!found) throw errors.teamNotInstalled(name);
+  return found;
+}
+
+// ---------------------------------------------------------------- validation
+
+function formatValidation(c, label, result) {
+  const lines = [];
+  const head = result.ok ? c.green('✔') : c.red('✖');
+  lines.push(`${head} ${c.bold(label)}${result.ok ? ' : valide' : ' : invalide'}`);
+  for (const e of result.errors) lines.push(`  ${c.red('erreur')}  ${e}`);
+  for (const w of result.warnings) lines.push(`  ${c.yellow('attention')}  ${w}`);
+  return lines.join('\n');
+}
+
+function validate(ctx, args) {
+  const { c } = ctx;
+  const target = args._[0];
+  const strict = Boolean(args.flags.strict);
+  const targets = [];
+
+  if (target && (target.includes('/') || target.includes('\\') || target.startsWith('.') || exists(path.join(path.resolve(ctx.cwd, target), 'team.json')))) {
+    targets.push({ label: target, dir: path.resolve(ctx.cwd, target) });
+  } else if (target) {
+    const found = requireInstalled(ctx, target, args.flags);
+    targets.push({ label: target, dir: found.dir });
+  } else {
+    for (const scope of availableScopes(ctx)) {
+      for (const t of installedTeams(ctx, scope)) targets.push({ label: `${t.name} (${scopeLabel(scope)})`, dir: t.dir });
+    }
+  }
+
+  const results = targets.map(({ label, dir }) => {
+    const r = validateTeam(dir);
+    const ok = r.ok && (!strict || r.warnings.length === 0);
+    return { label, dir, ok, errors: r.errors, warnings: r.warnings };
+  });
+  const ok = results.every((r) => r.ok);
+  const text = results.length === 0 ? 'Aucune team à valider.' : results.map((r) => formatValidation(c, r.label, r)).join('\n');
+  if (!ok) {
+    const err = new BytError('VALIDATION_FAILED', strict ? 'Validation échouée (mode strict).' : 'Validation échouée.');
+    err.hint = 'Corrigez les erreurs ci-dessus puis relancez : byt validate';
+    err.details = text;
+    err.data = { results };
+    throw err;
+  }
+  return { data: { ok, results }, text };
+}
+
 export const COMMANDS = {
   help,
   version,
   list,
   config,
+  validate,
 };

@@ -76,7 +76,7 @@ export function streamOf(text) {
 }
 
 export function agentMd({ name, description = `Agent ${name}`, tools = 'Read, Grep, Glob', model = 'sonnet', body }) {
-  return `---\nname: ${name}\ndescription: ${description}\ntools: ${tools}\nmodel: ${model}\n---\n\n${body ?? `You are ${name}.`}\n`;
+  return `---\nname: ${name}\ndescription: ${description}\ntools: ${tools}\nmodel: ${model}\n---\n\n${body ?? `You are ${name}, a focused test agent that reports back to the lead.`}\n`;
 }
 
 // Écrit une team valide dans un dossier `teams/<name>` du registry de test.

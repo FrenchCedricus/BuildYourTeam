@@ -66,8 +66,10 @@ export async function main(argv, io = {}) {
     if (json) {
       const error = { code: err.code, message: err.message };
       if (err.hint) error.hint = err.hint;
+      if (err.data) error.data = err.data;
       stdout.write(JSON.stringify({ ok: false, error }, null, 2) + '\n');
     } else {
+      if (err.details) stdout.write(err.details + '\n\n');
       stderr.write(`${ctx.c.red('✖')} ${err.message}\n`);
       if (err.hint) stderr.write(`  ${ctx.c.dim('→')} ${err.hint}\n`);
       if (err.code === 'INTERNAL' && ctx.env.BYT_DEBUG) stderr.write(e.stack + '\n');
