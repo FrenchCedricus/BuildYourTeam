@@ -408,6 +408,39 @@
       ]
     },
     {
+      "name": "translation",
+      "version": "1.0.0",
+      "description": "A full translation and localization team: terminology, translation, i18n engineering, cultural adaptation and linguistic QA for apps, docs and content.",
+      "author": "FrenchCedricus",
+      "tags": [
+        "translation",
+        "localization",
+        "i18n",
+        "l10n",
+        "languages"
+      ],
+      "mode": "subagents",
+      "lead": "lead",
+      "agents": [
+        "lead",
+        "terminologist",
+        "translator",
+        "localization-engineer",
+        "cultural-reviewer",
+        "linguistic-qa"
+      ],
+      "path": "teams/translation",
+      "files": [
+        "team.json",
+        "agents/lead.md",
+        "agents/terminologist.md",
+        "agents/translator.md",
+        "agents/localization-engineer.md",
+        "agents/cultural-reviewer.md",
+        "agents/linguistic-qa.md"
+      ]
+    },
+    {
       "name": "ux-design",
       "version": "1.0.0",
       "description": "A design team: UX audit, interaction design, UI implementation with a design system, and accessibility review.",

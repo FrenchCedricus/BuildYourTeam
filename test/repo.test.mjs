@@ -27,6 +27,7 @@ test('les agents en lecture seule n\'ont ni Edit, ni Write, ni Bash', () => {
     'legacy-modernization': ['migration-reviewer'],
     research: ['analyst'],
     'ux-design': ['ux-auditor'],
+    translation: ['cultural-reviewer', 'linguistic-qa'],
   };
   // Tous les leads coordonnent sans modifier ni exécuter quoi que ce soit.
   for (const team of fs.readdirSync(path.join(REPO_ROOT, 'teams'))) {

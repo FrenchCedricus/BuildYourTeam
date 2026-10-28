@@ -1,0 +1,17 @@
+{
+  "name": "translation",
+  "version": "1.0.0",
+  "description": "A full translation and localization team: terminology, translation, i18n engineering, cultural adaptation and linguistic QA for apps, docs and content.",
+  "author": "FrenchCedricus",
+  "tags": ["translation", "localization", "i18n", "l10n", "languages"],
+  "lead": "lead",
+  "mode": "subagents",
+  "agents": [
+    { "name": "lead", "enabled": true },
+    { "name": "terminologist", "enabled": true },
+    { "name": "translator", "enabled": true },
+    { "name": "localization-engineer", "enabled": true },
+    { "name": "cultural-reviewer", "enabled": true },
+    { "name": "linguistic-qa", "enabled": true }
+  ]
+}

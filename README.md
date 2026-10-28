@@ -88,6 +88,7 @@ The installer copies the skill to `~/.claude/skills/byt/` and creates `~/.byt/`.
 | `product-management` | Specs and roadmaps | lead, user-researcher, product-analyst, spec-writer, roadmap-planner |
 | `research` | Cited research reports | lead, scout, analyst, fact-checker, report-writer |
 | `content-marketing` | Articles and SEO | lead, researcher, writer, seo-specialist, copy-editor |
+| `translation` | Translation and localization | lead, terminologist, translator, localization-engineer, cultural-reviewer, linguistic-qa |
 | `brainstorming` | Ideas and decisions | facilitator, visionary, critic, pragmatist, synthesizer |
 
 Each agent gets only the tools its role needs. Leads, reviewers and auditors are read-only. Only the roles that must run commands get `Bash`, and only research roles get web access.
