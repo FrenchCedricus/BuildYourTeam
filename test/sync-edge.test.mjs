@@ -9,7 +9,7 @@ import { parseFrontmatter } from '../skill/lib/frontmatter.mjs';
 const globalAgents = (sb) => path.join(sb.dirs.claudeDir, 'agents');
 const projectAgents = (sb) => path.join(sb.dirs.project, '.claude', 'agents');
 
-test('sync : conflit de nom entre teams (dev/api-lead vs dev-api/lead) → avertissement, premier conservé', async () => {
+test('sync: name conflict between teams (dev/api-lead vs dev-api/lead) → warning, first one kept', async () => {
   const sb = sandbox();
   try {
     placeTeam(sb, { name: 'dev', agents: ['api-lead'] });
@@ -18,19 +18,19 @@ test('sync : conflit de nom entre teams (dev/api-lead vs dev-api/lead) → avert
     assert.equal(r.json.ok, true);
     const res = r.json.data.results[0];
     assert.deepEqual(res.written, ['byt-dev-api-lead.md']);
-    assert.match(res.warnings.join('\n'), /Conflit de nom : byt-dev-api-lead\.md est produit par deux teams/);
+    assert.match(res.warnings.join('\n'), /Name conflict: byt-dev-api-lead\.md is produced by two teams/);
     assert.deepEqual(agentsIn(globalAgents(sb)), ['byt-dev-api-lead.md']);
     const content = fs.readFileSync(path.join(globalAgents(sb), 'byt-dev-api-lead.md'), 'utf8');
-    assert.equal(parseFrontmatter(content).data.description, 'Agent api-lead', 'le fichier vient de la première team (dev)');
+    assert.equal(parseFrontmatter(content).data.description, 'Agent api-lead', 'the file comes from the first team (dev)');
 
     const text = await sb.byt('sync', '--global');
-    assert.match(text.stdout, /attention\s+Conflit de nom/);
+    assert.match(text.stdout, /warning\s+Name conflict/);
   } finally {
     sb.cleanup();
   }
 });
 
-test('sync : team.json manquant ou agent .md manquant → avertissement, la team est ignorée, le reste est synchronisé', () => {
+test('sync: missing team.json or agent .md → warning, the team is skipped, the rest is synced', () => {
   const sb = sandbox();
   try {
     const broken = placeTeam(sb, { name: 'broken', agents: ['lead'] });
@@ -41,16 +41,16 @@ test('sync : team.json manquant ou agent .md manquant → avertissement, la team
 
     const r = syncScope(sb.ctx(), 'global');
     const warnings = r.warnings.join('\n');
-    assert.match(warnings, /Team « broken » : team\.json introuvable/);
-    // Une team incomplète est revalidée et ignorée en entier.
-    assert.match(warnings, /Team « partial » invalide, agents non synchronisés : agents\/gone\.md : fichier introuvable/);
+    assert.match(warnings, /Team "broken": team\.json not found/);
+    // An incomplete team is validated again and skipped entirely.
+    assert.match(warnings, /Team "partial" is invalid, agents not synced: agents\/gone\.md: file not found/);
     assert.deepEqual(agentsIn(globalAgents(sb)), ['byt-ok-lead.md']);
   } finally {
     sb.cleanup();
   }
 });
 
-test('sync : fichier BYT modifié à la main ou supprimé → réécrit', () => {
+test('sync: BYT file edited by hand or deleted → written again', () => {
   const sb = sandbox();
   try {
     placeTeam(sb, { name: 'dev', agents: ['lead', 'backend'] });
@@ -59,7 +59,7 @@ test('sync : fichier BYT modifié à la main ou supprimé → réécrit', () => 
     const backend = path.join(globalAgents(sb), 'byt-dev-backend.md');
     const original = fs.readFileSync(lead, 'utf8');
 
-    fs.writeFileSync(lead, 'modifié à la main');
+    fs.writeFileSync(lead, 'edited by hand');
     fs.rmSync(backend);
     const r = syncScope(sb.ctx(), 'global');
     assert.deepEqual(r.written.sort(), ['byt-dev-backend.md', 'byt-dev-lead.md']);
@@ -72,7 +72,7 @@ test('sync : fichier BYT modifié à la main ou supprimé → réécrit', () => 
   }
 });
 
-test('sync --project / --global ne traitent qu\'une portée', async () => {
+test('sync --project / --global only handle one scope', async () => {
   const sb = sandbox();
   try {
     placeTeam(sb, { name: 'glob', agents: ['lead'] });
@@ -81,7 +81,7 @@ test('sync --project / --global ne traitent qu\'une portée', async () => {
     const p = await sb.bytJson('sync', '--project');
     assert.deepEqual(p.json.data.results.map((x) => x.scope), ['project']);
     assert.deepEqual(agentsIn(projectAgents(sb)), ['byt-proj-lead.md']);
-    assert.deepEqual(agentsIn(globalAgents(sb)), [], 'la portée globale n\'est pas traitée');
+    assert.deepEqual(agentsIn(globalAgents(sb)), [], 'the global scope is not handled');
 
     const g = await sb.bytJson('sync', '--global');
     assert.deepEqual(g.json.data.results.map((x) => x.scope), ['global']);

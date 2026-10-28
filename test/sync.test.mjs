@@ -8,7 +8,7 @@ import { parseFrontmatter } from '../skill/lib/frontmatter.mjs';
 
 const globalAgents = (sb) => path.join(sb.dirs.claudeDir, 'agents');
 
-test('sync : copie les agents actifs avec le préfixe byt-<team>-<agent>', () => {
+test('sync: copies the active agents with the byt-<team>-<agent> prefix', () => {
   const sb = sandbox();
   try {
     placeTeam(sb, { name: 'dev', agents: ['lead', 'backend'] });
@@ -16,7 +16,7 @@ test('sync : copie les agents actifs avec le préfixe byt-<team>-<agent>', () =>
     assert.deepEqual(r.written, ['byt-dev-lead.md', 'byt-dev-backend.md']);
     assert.deepEqual(agentsIn(globalAgents(sb)), ['byt-dev-backend.md', 'byt-dev-lead.md']);
     const fm = parseFrontmatter(fs.readFileSync(path.join(globalAgents(sb), 'byt-dev-backend.md'), 'utf8'));
-    assert.equal(fm.data.name, 'byt-dev-backend', 'le nom du frontmatter est préfixé');
+    assert.equal(fm.data.name, 'byt-dev-backend', 'the frontmatter name is prefixed');
     const again = syncScope(sb.ctx(), 'global');
     assert.deepEqual(again.written, []);
     assert.equal(again.unchanged.length, 2);
@@ -25,30 +25,30 @@ test('sync : copie les agents actifs avec le préfixe byt-<team>-<agent>', () =>
   }
 });
 
-test('sync : ne touche jamais aux agents qui ne viennent pas de BYT', () => {
+test('sync: never touches agents that do not come from BYT', () => {
   const sb = sandbox();
   try {
     const dir = globalAgents(sb);
     fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(path.join(dir, 'my-agent.md'), 'à moi');
-    // même un fichier préfixé byt- n'est pas touché s'il n'a pas été créé par BYT
-    fs.writeFileSync(path.join(dir, 'byt-dev-lead.md'), 'écrit à la main');
+    fs.writeFileSync(path.join(dir, 'my-agent.md'), 'mine');
+    // even a byt- prefixed file is left alone if BYT did not create it
+    fs.writeFileSync(path.join(dir, 'byt-dev-lead.md'), 'written by hand');
     placeTeam(sb, { name: 'dev', agents: ['lead', 'backend'] });
     const r = syncScope(sb.ctx(), 'global');
     assert.deepEqual(r.skipped, ['byt-dev-lead.md']);
-    assert.match(r.warnings.join('\n'), /sans avoir été créé par BYT/);
-    assert.equal(fs.readFileSync(path.join(dir, 'byt-dev-lead.md'), 'utf8'), 'écrit à la main');
-    assert.equal(fs.readFileSync(path.join(dir, 'my-agent.md'), 'utf8'), 'à moi');
+    assert.match(r.warnings.join('\n'), /was not created by BYT/);
+    assert.equal(fs.readFileSync(path.join(dir, 'byt-dev-lead.md'), 'utf8'), 'written by hand');
+    assert.equal(fs.readFileSync(path.join(dir, 'my-agent.md'), 'utf8'), 'mine');
 
     fs.writeFileSync(path.join(sb.dirs.bytHome, 'state.json'), JSON.stringify({ teams: {}, synced: ['byt-dev-backend.md'] }));
     syncScope(sb.ctx(), 'global');
-    assert.deepEqual(agentsIn(dir), ['byt-dev-lead.md', 'my-agent.md'], 'seul le fichier suivi est retiré');
+    assert.deepEqual(agentsIn(dir), ['byt-dev-lead.md', 'my-agent.md'], 'only the tracked file is removed');
   } finally {
     sb.cleanup();
   }
 });
 
-test('disable/enable d\'un agent : retiré puis recopié', async () => {
+test('disable/enable an agent: removed, then copied again', async () => {
   const sb = sandbox();
   try {
     placeTeam(sb, { name: 'dev', agents: ['lead', 'backend', 'docs'] });
@@ -70,7 +70,7 @@ test('disable/enable d\'un agent : retiré puis recopié', async () => {
   }
 });
 
-test('disable/enable d\'une team entière', async () => {
+test('disable/enable a whole team', async () => {
   const sb = sandbox();
   try {
     placeTeam(sb, { name: 'dev', agents: ['lead', 'backend'] });
@@ -78,7 +78,7 @@ test('disable/enable d\'une team entière', async () => {
     await sb.byt('sync');
     const r = await sb.byt('disable', 'dev');
     assert.equal(r.code, 0);
-    assert.match(r.stdout, /Team dev désactivée/);
+    assert.match(r.stdout, /Team dev disabled/);
     assert.deepEqual(agentsIn(globalAgents(sb)), ['byt-qa-lead.md']);
     const use = await sb.bytJson('use', 'dev');
     assert.deepEqual(use.json.data.agents.map((a) => a.subagent), ['byt-dev-lead', 'byt-dev-backend']);
@@ -88,7 +88,7 @@ test('disable/enable d\'une team entière', async () => {
   }
 });
 
-test('mode projet : les agents vont dans ./.claude/agents', async () => {
+test('project scope: agents go to ./.claude/agents', async () => {
   const sb = sandbox();
   try {
     placeTeam(sb, { scope: 'project', name: 'local-team', agents: ['lead'] });
@@ -100,12 +100,12 @@ test('mode projet : les agents vont dans ./.claude/agents', async () => {
   }
 });
 
-test('erreurs claires : team ou agent inconnus', async () => {
+test('clear errors: unknown team or agent', async () => {
   const sb = sandbox();
   try {
     const r = await sb.byt('enable', 'nope');
     assert.equal(r.code, 1);
-    assert.match(r.stderr, /La team « nope » n'est pas installée/);
+    assert.match(r.stderr, /Team "nope" is not installed/);
     assert.match(r.stderr, /\/byt install nope/);
     placeTeam(sb, { name: 'dev' });
     const a = await sb.bytJson('disable', 'dev', 'ghost');

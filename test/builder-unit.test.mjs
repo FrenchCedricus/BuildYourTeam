@@ -6,72 +6,72 @@ const OPTS = { team: 'demo', goal: 'Tester' };
 const throwsCode = (fn, code) => assert.throws(fn, (e) => e.code === code);
 
 // U13
-test('parseData : BOM retiré', () => {
+test('parseData: BOM removed', () => {
   assert.deepEqual(parseData('﻿{"a":1}'), { a: 1 });
 });
 
-test('parseData : vide → {}', () => {
+test('parseData: empty → {}', () => {
   assert.deepEqual(parseData(undefined), {});
   assert.deepEqual(parseData(null), {});
   assert.deepEqual(parseData(''), {});
   assert.deepEqual(parseData('  \n '), {});
 });
 
-test('parseData : tableau ou null JSON refusés', () => {
+test('parseData: JSON array or null refused', () => {
   throwsCode(() => parseData('[1, 2]'), 'INVALID_JSON');
   throwsCode(() => parseData('null'), 'INVALID_JSON');
 });
 
-test('parseData : JSON invalide → INVALID_JSON avec le libellé', () => {
+test('parseData: invalid JSON → INVALID_JSON with the label', () => {
   assert.throws(() => parseData('{', '--agent'), (e) => e.code === 'INVALID_JSON' && e.message.includes('--agent'));
 });
 
-test('parseData : objet renvoyé tel quel', () => {
+test('parseData: object returned as is', () => {
   const obj = { name: 'x' };
   assert.equal(parseData(obj), obj);
 });
 
 // U14
-test('buildAgent : modèle inconnu → INVALID_MODEL', () => {
+test('buildAgent: unknown model → INVALID_MODEL', () => {
   throwsCode(() => buildAgent({ name: 'worker', model: 'gpt-9' }, OPTS), 'INVALID_MODEL');
 });
 
-test('buildAgent : accès inconnu → INVALID_ACCESS', () => {
+test('buildAgent: unknown access → INVALID_ACCESS', () => {
   throwsCode(() => buildAgent({ name: 'worker', access: 'root' }, OPTS), 'INVALID_ACCESS');
 });
 
-test('buildAgent : nom invalide → INVALID_NAME', () => {
+test('buildAgent: invalid name → INVALID_NAME', () => {
   throwsCode(() => buildAgent({ name: 'Bad_Name' }, OPTS), 'INVALID_NAME');
   throwsCode(() => buildAgent(null, OPTS), 'INVALID_AGENT');
 });
 
-test('buildAgent : liste d\'outils vide → INVALID_TOOLS', () => {
+test('buildAgent: empty tool list → INVALID_TOOLS', () => {
   throwsCode(() => buildAgent({ name: 'worker', tools: [] }, OPTS), 'INVALID_TOOLS');
   throwsCode(() => buildAgent({ name: 'worker', tools: '' }, OPTS), 'INVALID_TOOLS');
 });
 
-test('buildAgent : tools en chaîne découpée', () => {
+test('buildAgent: tools string is split', () => {
   const a = buildAgent({ name: 'worker', tools: 'Read, Bash(git *)' }, OPTS);
   assert.deepEqual(a.tools, ['Read', 'Bash(git *)']);
 });
 
-test('buildAgent : outils déduits de l\'accès par défaut', () => {
+test('buildAgent: tools inferred from the default access', () => {
   const a = buildAgent({ name: 'worker', access: 'write' }, OPTS);
   assert.deepEqual(a.tools, ['Read', 'Grep', 'Glob', 'Edit', 'Write']);
 });
 
-test('buildAgent : enabled:false conservé, true par défaut', () => {
+test('buildAgent: enabled:false kept, true by default', () => {
   assert.equal(buildAgent({ name: 'worker', enabled: false }, OPTS).enabled, false);
   assert.equal(buildAgent({ name: 'worker' }, OPTS).enabled, true);
 });
 
-test('buildAgent : rôle sans point final, description par défaut = rôle', () => {
+test('buildAgent: role without a final period, default description = role', () => {
   const a = buildAgent({ name: 'worker', role: '  Builds APIs.  ' }, OPTS);
   assert.equal(a.role, 'Builds APIs');
   assert.equal(a.description, 'Builds APIs');
 });
 
-test('buildAgent : generated vrai sans prompt, faux avec prompt fourni', () => {
+test('buildAgent: generated is true without a prompt, false with a given prompt', () => {
   const gen = buildAgent({ name: 'worker' }, OPTS);
   assert.equal(gen.generated, true);
   assert.match(gen.prompt, /^You are the \*\*Worker\*\* of the "demo" team, whose goal is: Tester\./);
@@ -80,8 +80,8 @@ test('buildAgent : generated vrai sans prompt, faux avec prompt fourni', () => {
   assert.equal(own.prompt, 'Mon prompt.');
 });
 
-test('buildAgent : valeurs par défaut du profil', () => {
+test('buildAgent: profile defaults', () => {
   const a = buildAgent({ name: 'backend' }, OPTS);
   assert.deepEqual({ access: a.access, model: a.model }, { access: 'exec', model: 'sonnet' });
-  assert.equal(buildAgent({ name: 'backend', model: 'rapide' }, OPTS).model, 'haiku');
+  assert.equal(buildAgent({ name: 'backend', model: 'fast' }, OPTS).model, 'haiku');
 });

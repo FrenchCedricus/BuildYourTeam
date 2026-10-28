@@ -7,26 +7,26 @@ import { validateTeam, isValidName, compareVersions } from '../skill/lib/team.mj
 import { buildRegistry } from '../scripts/build-registry.mjs';
 import { sandbox, writeTeam } from './helpers.mjs';
 
-test('frontmatter : lecture, guillemets et CRLF', () => {
+test('frontmatter: parsing, quotes and CRLF', () => {
   const fm = parseFrontmatter('---\r\nname: a\r\ndescription: "Use it: always"\r\ntools: Read, Grep\r\n---\r\n\r\nBody');
   assert.deepEqual(fm.data, { name: 'a', description: 'Use it: always', tools: 'Read, Grep' });
   assert.equal(fm.body.trim(), 'Body');
-  assert.equal(parseFrontmatter('pas de frontmatter'), null);
+  assert.equal(parseFrontmatter('no frontmatter'), null);
 });
 
-test('frontmatter : setFrontmatterField ne modifie que la clé visée', () => {
+test('frontmatter: setFrontmatterField only changes the target key', () => {
   const src = '---\nname: backend\ndescription: Builds APIs\n---\n\nPrompt\n';
   const out = setFrontmatterField(src, 'name', 'byt-dev-backend');
   assert.equal(out, '---\nname: byt-dev-backend\ndescription: Builds APIs\n---\n\nPrompt\n');
 });
 
-test('frontmatter : renderFrontmatter met entre guillemets si nécessaire', () => {
+test('frontmatter: renderFrontmatter quotes when needed', () => {
   const out = renderFrontmatter({ name: 'x', description: 'Role: test', tools: ['Read', 'Grep'] }, 'Hello');
   assert.equal(out, '---\nname: x\ndescription: "Role: test"\ntools: Read, Grep\n---\n\nHello\n');
   assert.equal(parseFrontmatter(out).data.tools, 'Read, Grep');
 });
 
-test('noms kebab-case et comparaison de versions', () => {
+test('kebab-case names and version comparison', () => {
   assert.ok(isValidName('software-dev'));
   assert.ok(!isValidName('Software_Dev'));
   assert.ok(!isValidName('-dev'));
@@ -34,7 +34,7 @@ test('noms kebab-case et comparaison de versions', () => {
   assert.equal(compareVersions('2.0.0', '2.0.0'), 0);
 });
 
-test('validateTeam : team valide', () => {
+test('validateTeam: valid team', () => {
   const sb = sandbox();
   try {
     const dir = writeTeam(sb.dirs.registry, { name: 'demo' });
@@ -46,7 +46,7 @@ test('validateTeam : team valide', () => {
   }
 });
 
-test('validateTeam : détecte lead absent, frontmatter manquant, noms invalides', () => {
+test('validateTeam: detects a missing lead, a missing frontmatter and invalid names', () => {
   const sb = sandbox();
   try {
     const dir = writeTeam(sb.dirs.registry, { name: 'broken', agents: ['lead', 'worker'] });
@@ -58,28 +58,28 @@ test('validateTeam : détecte lead absent, frontmatter manquant, noms invalides'
     const r = validateTeam(dir);
     assert.equal(r.ok, false);
     const all = r.errors.join('\n');
-    assert.match(all, /lead : l'agent « boss » n'existe pas/);
-    assert.match(all, /worker\.md : frontmatter absent/);
-    assert.match(all, /« Bad_Name » : le nom doit être en kebab-case/);
+    assert.match(all, /lead: agent "boss" is not in the list/);
+    assert.match(all, /worker\.md: missing frontmatter/);
+    assert.match(all, /"Bad_Name": the name must be kebab-case/);
   } finally {
     sb.cleanup();
   }
 });
 
-test('validateTeam : un agent sans tools est une erreur (il hériterait de tous les outils)', () => {
+test('validateTeam: an agent without tools is an error (it would inherit every tool)', () => {
   const sb = sandbox();
   try {
     const dir = writeTeam(sb.dirs.registry, { name: 'loose' });
     fs.writeFileSync(path.join(dir, 'agents', 'worker.md'), '---\nname: worker\ndescription: Does work\n---\n\nYou are a worker that does a lot of useful work.\n');
     const r = validateTeam(dir);
     assert.equal(r.ok, false);
-    assert.match(r.errors.join('\n'), /« tools » est obligatoire/);
+    assert.match(r.errors.join('\n'), /"tools" field is required/);
   } finally {
     sb.cleanup();
   }
 });
 
-test('commande validate sur un dossier', async () => {
+test('validate command on a folder', async () => {
   const sb = sandbox();
   try {
     const dir = writeTeam(sb.dirs.registry, { name: 'demo' });
@@ -88,14 +88,14 @@ test('commande validate sur un dossier', async () => {
     fs.rmSync(path.join(dir, 'agents', 'worker.md'));
     const ko = await sb.byt('validate', dir);
     assert.equal(ko.code, 1);
-    assert.match(ko.stdout, /worker\.md : fichier introuvable/);
-    assert.match(ko.stderr, /Validation échouée/);
+    assert.match(ko.stdout, /worker\.md: file not found/);
+    assert.match(ko.stderr, /Validation failed/);
   } finally {
     sb.cleanup();
   }
 });
 
-test('buildRegistry : ne publie que les teams sans erreur ni avertissement', () => {
+test('buildRegistry: only publishes teams without errors or warnings', () => {
   const sb = sandbox();
   try {
     writeTeam(sb.dirs.registry, { name: 'good', agents: ['lead', 'helper'] });

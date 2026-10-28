@@ -1,4 +1,4 @@
-// Mise en forme terminal, sans dépendance. Les couleurs sont désactivées hors TTY et avec NO_COLOR.
+// Terminal formatting, dependency-free. Colours are disabled outside a TTY and with NO_COLOR.
 export function createColors(enabled) {
   const wrap = (code) => (s) => (enabled ? `\x1b[${code}m${s}\x1b[0m` : String(s));
   return {

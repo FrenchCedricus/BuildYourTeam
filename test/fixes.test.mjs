@@ -5,9 +5,9 @@ import { compareVersions } from '../skill/lib/team.mjs';
 import { buildAgent, parseData } from '../skill/lib/builder.mjs';
 import { parseArgs } from '../skill/lib/cli.mjs';
 
-// Bugs relevés par les teams testing et documentation.
+// Bugs found by the testing and documentation teams.
 
-test('compareVersions : une pré-release passe avant la version finale', () => {
+test('compareVersions: a pre-release sorts before the final version', () => {
   assert.equal(compareVersions('1.0.0-beta', '1.0.0'), -1);
   assert.equal(compareVersions('1.0.0', '1.0.0-beta'), 1);
   assert.equal(compareVersions('1.0.0-alpha', '1.0.0-beta'), -1);
@@ -17,7 +17,7 @@ test('compareVersions : une pré-release passe avant la version finale', () => {
   assert.equal(compareVersions('1.0.0-rc.1', '1.0.0-rc.1'), 0);
 });
 
-test('update : une version beta installée est mise à jour vers la version finale', async () => {
+test('update: an installed beta version is updated to the final version', async () => {
   const sb = sandbox();
   try {
     placeTeam(sb, { name: 'dev', version: '1.0.0-beta' });
@@ -31,13 +31,13 @@ test('update : une version beta installée est mise à jour vers la version fina
   }
 });
 
-test('help <commande> : seulement les lignes de cette commande ; commande inconnue → aide complète', async () => {
+test('help <command>: only that command\'s lines; unknown command → full help', async () => {
   const sb = sandbox();
   try {
     const list = await sb.bytJson('help', 'list');
     assert.deepEqual(list.json.data.commands.map((c) => c.usage), ['list', 'list --available']);
     const text = await sb.byt('install', '--help');
-    assert.match(text.stdout, /aide de « install »/);
+    assert.match(text.stdout, /help for "install"/);
     assert.doesNotMatch(text.stdout, /uninstall/);
     const full = await sb.bytJson('help', 'nope');
     assert.ok(full.json.data.commands.length > 10);
@@ -46,7 +46,7 @@ test('help <commande> : seulement les lignes de cette commande ; commande inconn
   }
 });
 
-test('add-agent interrompu : l\'indice propose byt add-agent --data, pas byt new', async () => {
+test('interrupted add-agent: the hint suggests byt add-agent --data, not byt new', async () => {
   const sb = sandbox();
   try {
     placeTeam(sb, { name: 'dev' });
@@ -59,19 +59,19 @@ test('add-agent interrompu : l\'indice propose byt add-agent --data, pas byt new
   }
 });
 
-test('buildAgent : un prompt fait seulement d\'espaces est généré (generated: true)', () => {
+test('buildAgent: a whitespace-only prompt is generated (generated: true)', () => {
   const a = buildAgent({ name: 'worker', prompt: '   \n ' }, { team: 't', goal: 'g' });
   assert.equal(a.generated, true);
   assert.ok(a.prompt.length > 40);
 });
 
-test('parseData : un tableau passé directement est refusé comme en texte JSON', () => {
+test('parseData: an array passed directly is refused, as in JSON text', () => {
   assert.throws(() => parseData([1, 2]), (e) => e.code === 'INVALID_JSON');
   assert.throws(() => parseData('[1, 2]'), (e) => e.code === 'INVALID_JSON');
   assert.deepEqual(parseData({ a: 1 }), { a: 1 });
 });
 
-test('cli : --all n\'est plus une option booléenne', () => {
+test('cli: --all is no longer a boolean option', () => {
   assert.equal(parseArgs(['list', '--json']).flags.json, true);
   assert.equal(parseArgs(['list', '--all', 'x']).flags.all, 'x');
 });

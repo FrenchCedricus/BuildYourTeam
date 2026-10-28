@@ -3,8 +3,8 @@ import path from 'node:path';
 import fs from 'node:fs';
 import { errors } from './errors.mjs';
 
-// Le contexte regroupe tous les chemins : les tests le remplacent par des dossiers temporaires
-// via BYT_HOME et BYT_CLAUDE_DIR.
+// The context holds every path: tests point it at temporary folders
+// through BYT_HOME and BYT_CLAUDE_DIR.
 export function createContext({ env = process.env, cwd = process.cwd() } = {}) {
   const home = os.homedir();
   return {
@@ -35,7 +35,7 @@ export function scopePaths(ctx, scope) {
   };
 }
 
-// Dans le dossier personnel, le mode projet se confondrait avec le mode global.
+// In the home folder, project scope would be the same as global scope.
 export function projectScopeAvailable(ctx) {
   return path.join(ctx.cwd, '.byt') !== ctx.bytHome && path.join(ctx.cwd, '.claude') !== ctx.claudeDir;
 }
@@ -44,7 +44,7 @@ export function availableScopes(ctx) {
   return projectScopeAvailable(ctx) ? ['project', 'global'] : ['global'];
 }
 
-// Portée demandée par l'utilisateur, ou portée par défaut de la commande.
+// Scope requested by the user, or the command's default scope.
 export function resolveScope(ctx, flags, defaultScope) {
   if (flags.project && flags.global) throw errors.conflictingScopes();
   if (flags.project) {
@@ -56,7 +56,7 @@ export function resolveScope(ctx, flags, defaultScope) {
   return defaultScope;
 }
 
-// Portées à parcourir pour retrouver une team déjà présente.
+// Scopes to search for an existing team.
 export function searchScopes(ctx, flags) {
   if (flags.project && flags.global) throw errors.conflictingScopes();
   if (flags.project) return [resolveScope(ctx, flags)];
@@ -64,8 +64,8 @@ export function searchScopes(ctx, flags) {
   return availableScopes(ctx);
 }
 
-// Les agent teams sont une fonctionnalité expérimentale activée par variable d'environnement,
-// éventuellement déclarée dans un settings.json.
+// Agent teams are an experimental feature enabled by an environment variable,
+// possibly set in a settings.json file.
 export function agentTeamsEnabled(ctx) {
   const key = 'CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS';
   const truthy = (v) => v !== undefined && v !== '' && v !== '0' && String(v).toLowerCase() !== 'false';
@@ -80,7 +80,7 @@ export function agentTeamsEnabled(ctx) {
       const settings = JSON.parse(fs.readFileSync(f, 'utf8'));
       if (truthy(settings?.env?.[key])) return true;
     } catch {
-      // fichier absent ou illisible : on ignore
+      // missing or unreadable file: ignore it
     }
   }
   return false;

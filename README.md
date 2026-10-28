@@ -184,8 +184,6 @@ node ~/.claude/skills/byt/byt.mjs new          # interactive wizard in the termi
 node ~/.claude/skills/byt/byt.mjs new my-team --data '{"description":"...","agents":[{"name":"lead"},{"name":"backend"}]}'
 ```
 
-The CLI output and the installer messages are currently in French.
-
 ## Development
 
 ```bash

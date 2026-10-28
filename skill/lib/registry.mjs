@@ -6,8 +6,8 @@ import { BytError, errors } from './errors.mjs';
 import { loadConfig } from './config.mjs';
 import { writeText } from './fsutil.mjs';
 
-// Le registry est un dossier (URL http(s), file:// ou chemin local) contenant registry.json
-// et les teams aux chemins indiqués dans chaque entrée.
+// The registry is a folder (https URL, file:// URL or local path) that contains registry.json
+// and the teams at the paths given in each entry.
 export const MAX_FILE_BYTES = 1024 * 1024;
 const TIMEOUT_MS = 20_000;
 
@@ -20,14 +20,14 @@ function localRoot(base) {
 }
 
 function tooLarge(what) {
-  return new BytError('REGISTRY_FILE_TOO_LARGE', `Fichier trop volumineux dans le registry (plus de ${MAX_FILE_BYTES / 1024} Kio) : ${what}`);
+  return new BytError('REGISTRY_FILE_TOO_LARGE', `File too large in the registry (over ${MAX_FILE_BYTES / 1024} KiB): ${what}`);
 }
 
 async function readRemote(base, rel) {
   if (isHttp(base)) {
-    // HTTP en clair : le contenu (des prompts d'agents) pourrait être modifié en chemin.
+    // Plain HTTP: the content (agent prompts) could be modified in transit.
     if (!/^https:\/\//i.test(base)) {
-      throw new BytError('REGISTRY_INSECURE', `Registry refusé : « ${base} » n'utilise pas HTTPS.`, 'Utilisez une URL https://, un chemin local ou file://.');
+      throw new BytError('REGISTRY_INSECURE', `Registry refused: "${base}" does not use HTTPS.`, 'Use an https:// URL, a local path or a file:// URL.');
     }
     const url = `${base.replace(/\/+$/, '')}/${rel}`;
     let res;
@@ -36,23 +36,23 @@ async function readRemote(base, rel) {
     } catch (e) {
       throw new BytError(
         'REGISTRY_UNREACHABLE',
-        `Impossible de joindre le registry (${e.cause?.code ?? e.name ?? e.message}).`,
-        `Vérifiez votre connexion, ou l'URL configurée (les redirections sont refusées) : byt config registry <url>`
+        `Cannot reach the registry (${e.cause?.code ?? e.name ?? e.message}).`,
+        `Check your connection, or the configured URL (redirects are refused): byt config registry <url>`
       );
     }
-    if (!res.ok) throw new BytError('REGISTRY_HTTP', `Téléchargement impossible (HTTP ${res.status}) : ${url}`);
+    if (!res.ok) throw new BytError('REGISTRY_HTTP', `Download failed (HTTP ${res.status}): ${url}`);
     if (Number(res.headers.get('content-length')) > MAX_FILE_BYTES) throw tooLarge(url);
     const text = await res.text();
     if (Buffer.byteLength(text) > MAX_FILE_BYTES) throw tooLarge(url);
     return text;
   }
   const file = path.join(localRoot(base), rel);
-  if (!fs.existsSync(file)) throw new BytError('REGISTRY_FILE_MISSING', `Fichier introuvable dans le registry : ${file}`);
+  if (!fs.existsSync(file)) throw new BytError('REGISTRY_FILE_MISSING', `File not found in the registry: ${file}`);
   if (fs.statSync(file).size > MAX_FILE_BYTES) throw tooLarge(file);
   return fs.readFileSync(file, 'utf8');
 }
 
-// Empreinte d'un fichier texte, indépendante du BOM et des fins de ligne (fetch retire le BOM, Windows ajoute des CRLF).
+// Hash of a text file, independent of the BOM and line endings (fetch strips the BOM, Windows adds CRLF).
 const BOM = String.fromCharCode(0xfeff);
 export function sha256(text) {
   const normalized = (text.startsWith(BOM) ? text.slice(1) : text).replace(/\r\n/g, '\n');
@@ -69,7 +69,7 @@ export async function fetchRegistry(ctx) {
     throw errors.invalidJson('registry.json', e.message);
   }
   if (!reg || !Array.isArray(reg.teams)) {
-    throw new BytError('REGISTRY_INVALID', 'Le registry est invalide : la liste « teams » est absente.');
+    throw new BytError('REGISTRY_INVALID', 'The registry is invalid: the "teams" list is missing.');
   }
   return { base, teams: reg.teams };
 }
@@ -78,10 +78,10 @@ export function findEntry(registry, name) {
   return registry.teams.find((t) => t.name === name) ?? null;
 }
 
-// Refuse tout chemin qui sortirait du dossier de la team (registry malveillant).
+// Refuses any path that would leave the team folder (malicious registry).
 function safeRelative(rel) {
   if (typeof rel !== 'string' || !rel || path.isAbsolute(rel) || rel.split(/[\\/]/).some((p) => p === '..' || p === '')) {
-    throw new BytError('REGISTRY_UNSAFE_PATH', `Chemin refusé dans le registry : « ${rel} ».`);
+    throw new BytError('REGISTRY_UNSAFE_PATH', `Path refused in the registry: "${rel}".`);
   }
   return rel;
 }
@@ -93,9 +93,9 @@ export async function downloadTeam(registry, entry, destDir) {
   for (const rel of files) {
     safeRelative(rel);
     const content = await readRemote(registry.base, `${teamPath}/${rel}`);
-    // Empreinte publiée dans registry.json : détecte un fichier modifié ou incomplet.
+    // Hash published in registry.json: detects a modified or truncated file.
     if (hashes && Object.hasOwn(hashes, rel) && hashes[rel] !== sha256(content)) {
-      throw new BytError('REGISTRY_HASH_MISMATCH', `Empreinte sha256 différente pour ${entry.name}/${rel} : téléchargement refusé.`, 'Le registry a peut-être changé pendant le téléchargement : réessayez dans quelques minutes.');
+      throw new BytError('REGISTRY_HASH_MISMATCH', `SHA-256 mismatch for ${entry.name}/${rel}: download refused.`, 'The registry may have changed during the download: try again in a few minutes.');
     }
     writeText(path.join(destDir, ...rel.split('/')), content);
   }

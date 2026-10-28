@@ -11,9 +11,9 @@ const globalAgents = (sb) => path.join(sb.dirs.claudeDir, 'agents');
 const entries = (dir) => (fs.existsSync(dir) ? fs.readdirSync(dir).sort() : []);
 const readJsonFile = (p) => JSON.parse(fs.readFileSync(p, 'utf8'));
 const newData = (overrides = {}) =>
-  JSON.stringify({ name: 'shop', description: 'Construire une boutique', agents: [{ name: 'alpha' }, { name: 'beta' }], ...overrides });
+  JSON.stringify({ name: 'shop', description: 'Build a shop', agents: [{ name: 'alpha' }, { name: 'beta' }], ...overrides });
 
-test('même team en projet et global : projet prioritaire, --global cible le global (uninstall, info)', async () => {
+test('same team in project and global scope: project first, --global targets global (uninstall, info)', async () => {
   const sb = sandbox();
   try {
     const globalDir = placeTeam(sb, { name: 'dev', version: '1.0.0' });
@@ -29,7 +29,7 @@ test('même team en projet et global : projet prioritaire, --global cible le glo
     const un = await sb.bytJson('uninstall', 'dev', '--global');
     assert.equal(un.json.data.scope, 'global');
     assert.ok(!fs.existsSync(globalDir));
-    assert.ok(fs.existsSync(projectDir), 'la team du projet est intacte');
+    assert.ok(fs.existsSync(projectDir), 'the project team is intact');
     assert.equal((await sb.bytJson('info', 'dev', '--global')).json.error.code, 'TEAM_NOT_INSTALLED');
 
     const rest = await sb.bytJson('uninstall', 'dev');
@@ -40,7 +40,7 @@ test('même team en projet et global : projet prioritaire, --global cible le glo
   }
 });
 
-test('state.json corrompu → INVALID_JSON, code 1', async () => {
+test('corrupted state.json → INVALID_JSON, exit code 1', async () => {
   const sb = sandbox();
   try {
     fs.mkdirSync(sb.dirs.bytHome, { recursive: true });
@@ -51,13 +51,13 @@ test('state.json corrompu → INVALID_JSON, code 1', async () => {
     assert.equal(j.json.error.code, 'INVALID_JSON');
     const t = await sb.byt('sync');
     assert.equal(t.code, 1);
-    assert.match(t.stderr, /JSON invalide .*state\.json/);
+    assert.match(t.stderr, /Invalid JSON .*state\.json/);
   } finally {
     sb.cleanup();
   }
 });
 
-test('list texte : team cassée, inactive, lead marqué', async () => {
+test('list text: broken team, disabled team, lead marked', async () => {
   const sb = sandbox();
   try {
     placeTeam(sb, { name: 'dev', agents: ['lead', 'backend'] });
@@ -68,8 +68,8 @@ test('list texte : team cassée, inactive, lead marqué', async () => {
 
     const r = await sb.byt('list');
     assert.equal(r.code, 0);
-    assert.match(r.stdout, /Teams installées \(3\)/);
-    assert.match(r.stdout, /broken v1\.0\.0 .*\n\s+team\.json introuvable — réinstallez la team/);
+    assert.match(r.stdout, /Installed teams \(3\)/);
+    assert.match(r.stdout, /broken v1\.0\.0 .*\n\s+team\.json not found — reinstall the team/);
     assert.match(r.stdout, /sleepy v1\.0\.0\s+○ inactive/);
     assert.match(r.stdout, /dev v1\.0\.0\s+● active/);
     assert.match(r.stdout, /✔ lead \(lead\)\s+✔ backend/);
@@ -85,20 +85,20 @@ test('list texte : team cassée, inactive, lead marqué', async () => {
   }
 });
 
-test('enable/disable : avertissement lead désactivé, agent activé dans team inactive, sans argument → USAGE', async () => {
+test('enable/disable: warning when the lead is disabled, agent enabled in a disabled team, no argument → USAGE', async () => {
   const sb = sandbox();
   try {
     placeTeam(sb, { name: 'dev', agents: ['lead', 'backend'] });
     const off = await sb.bytJson('disable', 'dev', 'lead');
     assert.equal(off.json.ok, true);
-    assert.match(off.json.data.warnings.join('\n'), /« lead » est le lead/);
+    assert.match(off.json.data.warnings.join('\n'), /"lead" is the lead/);
     assert.deepEqual((await sb.bytJson('disable', 'dev', 'backend')).json.data.warnings, []);
 
     await sb.byt('disable', 'dev');
     const on = await sb.byt('enable', 'dev', 'backend');
     assert.equal(on.code, 0);
-    assert.match(on.stdout, /attention\s+La team « dev » est inactive : activez-la avec \/byt enable dev/);
-    assert.deepEqual(agentsIn(globalAgents(sb)), [], 'team inactive : aucun agent synchronisé');
+    assert.match(on.stdout, /warning\s+Team "dev" is disabled: enable it with \/byt enable dev/);
+    assert.deepEqual(agentsIn(globalAgents(sb)), [], 'disabled team: no agent synced');
 
     for (const cmd of ['enable', 'disable']) {
       const r = await sb.bytJson(cmd);
@@ -110,12 +110,12 @@ test('enable/disable : avertissement lead désactivé, agent activé dans team i
   }
 });
 
-test('validate : sans team, team installée par nom, --strict sur avertissement, error.data.results en JSON', async () => {
+test('validate: no team, installed team by name, --strict on a warning, error.data.results in JSON', async () => {
   const sb = sandbox();
   try {
     const none = await sb.byt('validate');
     assert.equal(none.code, 0);
-    assert.match(none.stdout, /Aucune team à valider/);
+    assert.match(none.stdout, /No team to validate/);
 
     const dir = placeTeam(sb, { name: 'dev', agents: ['lead', 'worker'] });
     const ok = await sb.bytJson('validate', 'dev');
@@ -123,23 +123,23 @@ test('validate : sans team, team installée par nom, --strict sur avertissement,
     assert.deepEqual(ok.json.data.results.map((r) => [r.label, r.ok]), [['dev', true]]);
     assert.equal(ok.json.data.results[0].dir, dir);
 
-    // outil inconnu : simple avertissement, bloquant seulement en --strict
+    // unknown tool: only a warning, blocking with --strict
     fs.writeFileSync(path.join(dir, 'agents', 'worker.md'), agentMd({ name: 'worker', tools: 'Read, Foo' }));
     const lax = await sb.bytJson('validate', 'dev');
     assert.equal(lax.json.ok, true);
-    assert.match(lax.json.data.results[0].warnings.join('\n'), /outil inconnu « Foo »/);
+    assert.match(lax.json.data.results[0].warnings.join('\n'), /unknown tool "Foo"/);
 
     const strict = await sb.bytJson('validate', 'dev', '--strict');
     assert.equal(strict.code, 1);
     assert.equal(strict.json.error.code, 'VALIDATION_FAILED');
-    assert.match(strict.json.error.message, /mode strict/);
+    assert.match(strict.json.error.message, /strict mode/);
     assert.equal(strict.json.error.data.results[0].ok, false);
     assert.deepEqual(strict.json.error.data.results[0].errors, []);
 
     const strictText = await sb.byt('validate', '--strict');
     assert.equal(strictText.code, 1);
-    assert.match(strictText.stdout, /✖ dev \(global\) : invalide/);
-    assert.match(strictText.stderr, /Validation échouée \(mode strict\)/);
+    assert.match(strictText.stdout, /✖ dev \(global\): invalid/);
+    assert.match(strictText.stderr, /Validation failed \(strict mode\)/);
 
     assert.equal((await sb.bytJson('validate', 'ghost')).json.error.code, 'TEAM_NOT_INSTALLED');
   } finally {
@@ -147,7 +147,7 @@ test('validate : sans team, team installée par nom, --strict sur avertissement,
   }
 });
 
-test('new --data : MISSING_DESCRIPTION, NO_AGENTS, INVALID_LEAD, INVALID_MODE, INVALID_MODEL, sans .tmp restant', async () => {
+test('new --data: MISSING_DESCRIPTION, NO_AGENTS, INVALID_LEAD, INVALID_MODE, INVALID_MODEL, no .tmp left', async () => {
   const sb = sandbox();
   try {
     const cases = [
@@ -163,16 +163,16 @@ test('new --data : MISSING_DESCRIPTION, NO_AGENTS, INVALID_LEAD, INVALID_MODE, I
       const r = await sb.bytJson('new', '--data', newData(overrides));
       assert.equal(r.code, 1);
       assert.equal(r.json.error.code, code, JSON.stringify(overrides));
-      assert.deepEqual(entries(projectTeams(sb)), [], `aucun dossier laissé (${code})`);
+      assert.deepEqual(entries(projectTeams(sb)), [], `no folder left (${code})`);
     }
     assert.deepEqual(entries(projectAgents(sb)), []);
-    assert.ok(!fs.existsSync(path.join(sb.dirs.project, '.byt', 'state.json')), 'aucune team enregistrée');
+    assert.ok(!fs.existsSync(path.join(sb.dirs.project, '.byt', 'state.json')), 'no team recorded');
   } finally {
     sb.cleanup();
   }
 });
 
-test('new --data : lead explicite, lead par défaut = premier agent, --force remplace, mode agent-team', async () => {
+test('new --data: explicit lead, default lead = first agent, --force replaces, agent-team mode', async () => {
   const sb = sandbox();
   try {
     const explicit = await sb.bytJson('new', '--data', newData({ lead: 'beta' }));
@@ -192,7 +192,7 @@ test('new --data : lead explicite, lead par défaut = premier agent, --force rem
     const team = readJsonFile(path.join(dir, 'team.json'));
     assert.equal(team.mode, 'agent-team');
     assert.deepEqual(team.agents.map((a) => a.name), ['gamma']);
-    assert.deepEqual(entries(path.join(dir, 'agents')), ['gamma.md'], 'les anciens agents sont supprimés');
+    assert.deepEqual(entries(path.join(dir, 'agents')), ['gamma.md'], 'the old agents are deleted');
     assert.deepEqual(entries(projectAgents(sb)), ['byt-other-alpha.md', 'byt-other-beta.md', 'byt-shop-gamma.md']);
     assert.deepEqual(entries(projectTeams(sb)), ['other', 'shop']);
   } finally {
@@ -200,7 +200,7 @@ test('new --data : lead explicite, lead par défaut = premier agent, --force rem
   }
 });
 
-test('new --from : inconnue → TEAM_NOT_IN_REGISTRY, registry injoignable → TEAM_NOT_INSTALLED, dossier temporaire nettoyé', async () => {
+test('new --from: unknown → TEAM_NOT_IN_REGISTRY, unreachable registry → TEAM_NOT_INSTALLED, temporary folder cleaned up', async () => {
   const sb = sandbox();
   try {
     writeTeam(sb.dirs.registry, { name: 'game', agents: ['lead', 'tester'] });
@@ -210,14 +210,14 @@ test('new --from : inconnue → TEAM_NOT_IN_REGISTRY, registry injoignable → T
     const unknown = await sb.bytJson('new', '--from', 'ghost', '--data', data);
     assert.equal(unknown.json.error.code, 'TEAM_NOT_IN_REGISTRY');
 
-    // échec après téléchargement de la source : le dossier temporaire disparaît
+    // failure after downloading the source: the temporary folder is removed
     const failing = await sb.bytJson('new', '--from', 'game', '--data', JSON.stringify({ name: 'mine', agents: [{ name: 'lead', model: 'gpt-4' }] }));
     assert.equal(failing.json.error.code, 'INVALID_MODEL');
     assert.deepEqual(entries(projectTeams(sb)), []);
 
     const ok = await sb.bytJson('new', '--from', 'game', '--data', data);
     assert.equal(ok.json.ok, true, ok.stdout);
-    assert.deepEqual(entries(projectTeams(sb)), ['mine'], 'la source téléchargée est nettoyée');
+    assert.deepEqual(entries(projectTeams(sb)), ['mine'], 'the downloaded source is cleaned up');
 
     sb.env.BYT_REGISTRY = UNREACHABLE;
     const offline = await sb.bytJson('new', '--from', 'game', '--data', JSON.stringify({ name: 'mine2', description: 'x' }));
@@ -228,13 +228,13 @@ test('new --from : inconnue → TEAM_NOT_IN_REGISTRY, registry injoignable → T
   }
 });
 
-test('add-agent : avertissement team registry, team via data.team, --json sans --data → DATA_REQUIRED, sans team → USAGE', async () => {
+test('add-agent: registry team warning, team via data.team, --json without --data → DATA_REQUIRED, no team → USAGE', async () => {
   const sb = sandbox();
   try {
     placeTeam(sb, { name: 'dev', agents: ['lead'] });
     const add = await sb.bytJson('add-agent', 'dev', '--data', JSON.stringify({ name: 'docs', role: 'Writes the docs' }));
     assert.equal(add.json.ok, true, add.stdout);
-    assert.match(add.json.data.warnings.join('\n'), /vient du registry : un update écrasera cet ajout/);
+    assert.match(add.json.data.warnings.join('\n'), /comes from the registry: an update will overwrite this addition/);
     assert.ok(agentsIn(globalAgents(sb)).includes('byt-dev-docs.md'));
 
     const viaData = await sb.bytJson('add-agent', '--data', JSON.stringify({ team: 'dev', name: 'qa', role: 'Tests everything' }));
@@ -245,7 +245,7 @@ test('add-agent : avertissement team registry, team via data.team, --json sans -
     await sb.byt('new', '--data', newData());
     const local = await sb.bytJson('add-agent', 'shop', '--data', JSON.stringify({ name: 'gamma' }));
     assert.equal(local.json.ok, true);
-    assert.doesNotMatch(local.json.data.warnings.join('\n'), /vient du registry/, 'pas d\'avertissement pour une team locale');
+    assert.doesNotMatch(local.json.data.warnings.join('\n'), /comes from the registry/, 'no warning for a local team');
 
     assert.equal((await sb.bytJson('add-agent', 'dev')).json.error.code, 'DATA_REQUIRED');
     assert.equal((await sb.bytJson('add-agent', '--data', '{"name":"x"}')).json.error.code, 'USAGE');
@@ -255,7 +255,7 @@ test('add-agent : avertissement team registry, team via data.team, --json sans -
   }
 });
 
-test('remove-agent agent inconnu / arguments manquants ; run → RUN_REQUIRES_CLAUDE ; --version ; install --help → aide ; config sans argument liste chemins', async () => {
+test('remove-agent unknown agent / missing arguments; run → RUN_REQUIRES_CLAUDE; --version; install --help → help; config without arguments lists paths', async () => {
   const sb = sandbox();
   try {
     placeTeam(sb, { name: 'dev', agents: ['lead', 'worker'] });
@@ -264,9 +264,9 @@ test('remove-agent agent inconnu / arguments manquants ; run → RUN_REQUIRES_CL
     assert.equal((await sb.bytJson('remove-agent')).json.error.code, 'USAGE');
     assert.deepEqual(entries(path.join(sb.dirs.bytHome, 'teams', 'dev', 'agents')), ['lead.md', 'worker.md']);
 
-    const run = await sb.byt('run', 'dev', 'écrire', 'des', 'tests');
+    const run = await sb.byt('run', 'dev', 'write', 'some', 'tests');
     assert.equal(run.code, 1);
-    assert.match(run.stderr, /s'exécute dans Claude Code/);
+    assert.match(run.stderr, /works inside Claude Code/);
     assert.equal((await sb.bytJson('run', 'dev', 'x')).json.error.code, 'RUN_REQUIRES_CLAUDE');
 
     const pkg = readJsonFile(path.join(REPO_ROOT, 'package.json'));
@@ -284,7 +284,7 @@ test('remove-agent agent inconnu / arguments manquants ; run → RUN_REQUIRES_CL
 
     const cfg = await sb.bytJson('config');
     assert.deepEqual(cfg.json.data.paths, { bytHome: sb.dirs.bytHome, claudeDir: sb.dirs.claudeDir });
-    assert.equal(cfg.json.data.config.registry, UNREACHABLE, 'BYT_REGISTRY prime sur la configuration');
+    assert.equal(cfg.json.data.config.registry, UNREACHABLE, 'BYT_REGISTRY overrides the configuration');
     const cfgText = await sb.byt('config');
     assert.match(cfgText.stdout, /Configuration/);
     assert.ok(cfgText.stdout.includes(path.join(sb.dirs.bytHome, 'config.json')));

@@ -1,9 +1,9 @@
-// Connaissances partagées par le builder CLI et le skill : niveaux d'accès, modèles,
-// compositions types par projet, et prompts de base générés à partir d'un rôle.
+// Knowledge shared by the CLI builder and the skill: access levels, models,
+// typical compositions per project type, and base prompts generated from a role.
 
 export const ACCESS_LEVELS = {
   read: {
-    label: 'Lecture seule',
+    label: 'Read-only',
     tools: ['Read', 'Grep', 'Glob'],
     rules: [
       'You are **read-only**: you may read and search the project (Read, Grep, Glob) but you never modify files or run commands.',
@@ -11,7 +11,7 @@ export const ACCESS_LEVELS = {
     ],
   },
   write: {
-    label: 'Modification de fichiers',
+    label: 'Edit files',
     tools: ['Read', 'Grep', 'Glob', 'Edit', 'Write'],
     rules: [
       'You may create and edit files (Edit, Write). Keep every change minimal, focused on the task, and consistent with the existing style.',
@@ -19,7 +19,7 @@ export const ACCESS_LEVELS = {
     ],
   },
   exec: {
-    label: 'Exécution de commandes',
+    label: 'Run commands',
     tools: ['Read', 'Grep', 'Glob', 'Edit', 'Write', 'Bash'],
     rules: [
       'You may edit files and run shell commands (Bash). Prefer read-only and reversible commands.',
@@ -30,21 +30,21 @@ export const ACCESS_LEVELS = {
 };
 
 const ACCESS_ALIASES = {
-  read: 'read', 'read-only': 'read', readonly: 'read', lecture: 'read', 'lecture-seule': 'read',
-  write: 'write', edit: 'write', modification: 'write', ecriture: 'write',
-  exec: 'exec', bash: 'exec', execute: 'exec', execution: 'exec', commandes: 'exec',
+  read: 'read', 'read-only': 'read', readonly: 'read',
+  write: 'write', edit: 'write', 'edit-files': 'write',
+  exec: 'exec', bash: 'exec', execute: 'exec', run: 'exec', 'run-commands': 'exec',
 };
 
 export const MODEL_CHOICES = [
-  { id: 'haiku', label: 'Rapide / économique (haiku)' },
-  { id: 'sonnet', label: 'Équilibré (sonnet)' },
-  { id: 'opus', label: 'Puissant (opus)' },
+  { id: 'haiku', label: 'Fast & cheap (haiku)' },
+  { id: 'sonnet', label: 'Balanced (sonnet)' },
+  { id: 'opus', label: 'Powerful (opus)' },
 ];
 
 const MODEL_ALIASES = {
-  haiku: 'haiku', fast: 'haiku', rapide: 'haiku', economique: 'haiku', cheap: 'haiku',
-  sonnet: 'sonnet', balanced: 'sonnet', equilibre: 'sonnet', default: 'sonnet',
-  opus: 'opus', powerful: 'opus', puissant: 'opus', strong: 'opus',
+  haiku: 'haiku', fast: 'haiku', cheap: 'haiku',
+  sonnet: 'sonnet', balanced: 'sonnet', default: 'sonnet',
+  opus: 'opus', powerful: 'opus', strong: 'opus',
   inherit: 'inherit',
 };
 
@@ -70,14 +70,14 @@ export function normalizeModel(value) {
   return null;
 }
 
-// Déduit le niveau d'accès à partir d'une liste d'outils existante.
+// Infers the access level from an existing tool list.
 export function accessFromTools(tools) {
   if (tools.includes('Bash')) return 'exec';
   if (tools.includes('Edit') || tools.includes('Write')) return 'write';
   return 'read';
 }
 
-// Profils de rôles : repérés par mot-clé dans le nom de l'agent.
+// Role profiles, matched by keyword in the agent name.
 const PROFILES = [
   {
     match: /^(lead|leader|manager|coordinator|orchestrator|facilitator|chef)/,
@@ -253,31 +253,31 @@ export function titleOf(name) {
     .join(' ');
 }
 
-// Compositions proposées selon le type de projet.
+// Suggested compositions per project type.
 export const PROJECT_TYPES = {
   web: {
-    label: 'Application web',
+    label: 'Web app',
     agents: ['lead', 'architect', 'backend', 'frontend', 'reviewer', 'docs'],
   },
   game: {
-    label: 'Jeu vidéo',
+    label: 'Video game',
     agents: ['lead', 'game-designer', 'gameplay-dev', 'level-designer', 'playtester'],
   },
   data: {
-    label: 'Data / IA',
+    label: 'Data & AI',
     agents: ['lead', 'data-engineer', 'data-analyst', 'ml-engineer', 'reviewer'],
   },
   mobile: {
-    label: 'Application mobile',
+    label: 'Mobile app',
     agents: ['lead', 'mobile-dev', 'ux-designer', 'backend', 'tester'],
   },
   other: {
-    label: 'Autre',
+    label: 'Other',
     agents: ['lead', 'researcher', 'builder', 'reviewer'],
   },
 };
 
-// Valeurs par défaut d'un agent : rôle, accès, modèle.
+// Default values of an agent: role, access, model.
 export function defaultsFor(name, { isLead = false } = {}) {
   const p = profileFor(name);
   if (isLead || p?.lead) return { role: PROFILES[0].role, access: 'read', model: 'opus' };

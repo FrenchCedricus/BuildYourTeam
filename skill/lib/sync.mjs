@@ -16,13 +16,13 @@ export function agentFileName(team, agent) {
   return `${agentId(team, agent)}.md`;
 }
 
-// Copie dans .claude/agents les agents ACTIFS des teams ACTIVES d'une portée,
-// et retire les fichiers BYT devenus inutiles. Seuls les fichiers byt-*.md
-// que BYT a lui-même écrits (listés dans state.synced) peuvent être supprimés
-// ou écrasés : les autres agents de l'utilisateur ne sont jamais touchés.
+// Copies the ACTIVE agents of the ACTIVE teams of a scope into .claude/agents,
+// and removes BYT files that are no longer needed. Only byt-*.md files that
+// BYT wrote itself (listed in state.synced) can be deleted or overwritten:
+// the user's other agents are never touched.
 //
-// state.json et team.json sont relus sur le disque et peuvent venir d'un dépôt cloné :
-// noms, chemins et contenu sont revérifiés ici avant toute écriture ou suppression.
+// state.json and team.json are read back from disk and may come from a cloned repository:
+// names, paths and content are checked again here before anything is written or deleted.
 export const SYNCED_FILE_RE = /^byt-[a-z0-9]+(?:-[a-z0-9]+)*\.md$/;
 
 export function syncScope(ctx, scope) {
@@ -36,17 +36,17 @@ export function syncScope(ctx, scope) {
   for (const [teamName, info] of Object.entries(state.teams ?? {})) {
     if (info?.enabled === false) continue;
     if (!isValidName(teamName)) {
-      warnings.push(`state.json : nom de team invalide « ${teamName} », ignoré.`);
+      warnings.push(`state.json: invalid team name "${teamName}", skipped.`);
       continue;
     }
     const dir = path.join(sp.teamsDir, teamName);
     if (!fs.existsSync(path.join(dir, 'team.json'))) {
-      warnings.push(`Team « ${teamName} » : team.json introuvable, agents non synchronisés.`);
+      warnings.push(`Team "${teamName}": team.json not found, agents not synced.`);
       continue;
     }
     const v = validateTeam(dir, { expectedName: teamName });
     if (!v.ok) {
-      warnings.push(`Team « ${teamName} » invalide, agents non synchronisés : ${v.errors[0]}`);
+      warnings.push(`Team "${teamName}" is invalid, agents not synced: ${v.errors[0]}`);
       continue;
     }
     const team = v.team;
@@ -54,15 +54,15 @@ export function syncScope(ctx, scope) {
       if (a.enabled === false) continue;
       const src = assertInside(dir, agentPath(dir, a.name));
       if (!fs.existsSync(src)) {
-        warnings.push(`Team « ${teamName} » : agents/${a.name}.md introuvable.`);
+        warnings.push(`Team "${teamName}": agents/${a.name}.md not found.`);
         continue;
       }
       const file = agentFileName(teamName, a.name);
       if (desired.has(file)) {
-        warnings.push(`Conflit de nom : ${file} est produit par deux teams, seul le premier est conservé.`);
+        warnings.push(`Name conflict: ${file} is produced by two teams, only the first one is kept.`);
         continue;
       }
-      // Le nom dans le frontmatter doit correspondre au nom du fichier préfixé.
+      // The frontmatter name must match the prefixed file name.
       const content = setFrontmatterField(fs.readFileSync(src, 'utf8'), 'name', agentId(teamName, a.name));
       desired.set(file, { content, team: teamName, agent: a.name });
     }
@@ -78,7 +78,7 @@ export function syncScope(ctx, scope) {
     const dest = assertInside(sp.agentsDir, path.join(sp.agentsDir, file));
     if (fs.existsSync(dest) && !tracked.has(file)) {
       skipped.push(file);
-      warnings.push(`${file} existe déjà dans ${sp.agentsDir} sans avoir été créé par BYT : fichier laissé intact.`);
+      warnings.push(`${file} already exists in ${sp.agentsDir} and was not created by BYT: file left untouched.`);
       continue;
     }
     synced.push(file);
@@ -106,10 +106,10 @@ export function syncScope(ctx, scope) {
 
 export function formatSync(c, result) {
   const parts = [];
-  if (result.written.length) parts.push(c.green(`${result.written.length} écrit(s)`));
-  if (result.removed.length) parts.push(c.yellow(`${result.removed.length} retiré(s)`));
-  if (result.unchanged.length) parts.push(c.dim(`${result.unchanged.length} inchangé(s)`));
-  const lines = [`${c.dim('sync')} ${result.agentsDir} : ${parts.length ? parts.join(', ') : 'rien à faire'}`];
-  for (const w of result.warnings) lines.push(`  ${c.yellow('attention')}  ${w}`);
+  if (result.written.length) parts.push(c.green(`${result.written.length} written`));
+  if (result.removed.length) parts.push(c.yellow(`${result.removed.length} removed`));
+  if (result.unchanged.length) parts.push(c.dim(`${result.unchanged.length} unchanged`));
+  const lines = [`${c.dim('sync')} ${result.agentsDir}: ${parts.length ? parts.join(', ') : 'nothing to do'}`];
+  for (const w of result.warnings) lines.push(`  ${c.yellow('warning')}  ${w}`);
   return lines.join('\n');
 }

@@ -8,8 +8,8 @@ import { main } from '../skill/lib/cli.mjs';
 
 export const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
-// Un environnement isolé : faux ~/.byt, faux ~/.claude, un dossier projet,
-// et un registry local (file://) construit à partir de teams de test.
+// An isolated environment: fake ~/.byt, fake ~/.claude, a project folder,
+// and a local registry (file://) built from test teams.
 export function sandbox() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'byt-test-'));
   const dirs = {
@@ -44,7 +44,7 @@ export function sandbox() {
     try {
       return { ...r, json: JSON.parse(r.stdout) };
     } catch {
-      throw new Error(`Sortie JSON invalide pour « ${argv.join(' ')} » :\n${r.stdout}\n${r.stderr}`);
+      throw new Error(`Invalid JSON output for "${argv.join(' ')}":\n${r.stdout}\n${r.stderr}`);
     }
   }
 
@@ -80,14 +80,14 @@ export function agentMd({ name, description = `Agent ${name}`, tools = 'Read, Gr
   return `---\nname: ${name}\ndescription: ${description}\ntools: ${tools}\nmodel: ${model}\n---\n\n${body ?? `You are ${name}, a focused test agent that reports back to the lead.`}\n`;
 }
 
-// Écrit une team valide dans un dossier `teams/<name>` du registry de test.
+// Writes a valid team into a `teams/<name>` folder of the test registry.
 export function writeTeam(baseDir, { name, version = '1.0.0', agents = ['lead', 'worker'], lead = agents[0], mode = 'subagents', tags = ['test'], description } = {}) {
   const dir = path.join(baseDir, 'teams', name);
   fs.mkdirSync(path.join(dir, 'agents'), { recursive: true });
   const team = {
     name,
     version,
-    description: description ?? `Team de test ${name}`,
+    description: description ?? `Test team ${name}`,
     author: 'tests',
     tags,
     lead,
@@ -99,7 +99,7 @@ export function writeTeam(baseDir, { name, version = '1.0.0', agents = ['lead', 
   return dir;
 }
 
-// Génère le registry.json correspondant aux teams présentes dans baseDir/teams.
+// Generates the registry.json matching the teams in baseDir/teams.
 export function writeRegistry(baseDir) {
   const teamsDir = path.join(baseDir, 'teams');
   const teams = fs.existsSync(teamsDir)
@@ -120,7 +120,7 @@ export function writeRegistry(baseDir) {
   fs.writeFileSync(path.join(baseDir, 'registry.json'), JSON.stringify({ schema: 1, teams }, null, 2));
 }
 
-// Installe directement une team dans une portée (sans passer par le registry).
+// Installs a team directly in a scope (without going through the registry).
 export function placeTeam(sb, { scope = 'global', ...opts }) {
   const base = scope === 'project' ? path.join(sb.dirs.project, '.byt') : sb.dirs.bytHome;
   const dir = writeTeam(base, opts);

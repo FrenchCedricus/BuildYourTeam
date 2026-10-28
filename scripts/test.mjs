@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// Lance node --test sur test/*.test.mjs. Les motifs glob de --test n'existent qu'à partir de Node 21 :
-// on passe donc la liste explicite des fichiers, ce qui marche avec Node 18 et plus.
+// Runs node --test on test/*.test.mjs. Glob patterns for --test only exist from Node 21,
+// so the files are passed explicitly, which works with Node 18 and later.
 import fs from 'node:fs';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';

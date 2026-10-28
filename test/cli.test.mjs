@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { parseArgs } from '../skill/lib/cli.mjs';
 import { sandbox } from './helpers.mjs';
 
-test('parseArgs : positionnels, booléens et options à valeur', () => {
+test('parseArgs: positionals, booleans and options with values', () => {
   const a = parseArgs(['enable', 'software-dev', 'reviewer', '--project', '--data', '{"x":1}', '--from=game-dev']);
   assert.equal(a.command, 'enable');
   assert.deepEqual(a._, ['software-dev', 'reviewer']);
@@ -12,7 +12,7 @@ test('parseArgs : positionnels, booléens et options à valeur', () => {
   assert.equal(a.flags.from, 'game-dev');
 });
 
-test('help est la commande par défaut', async () => {
+test('help is the default command', async () => {
   const sb = sandbox();
   try {
     const r = await sb.byt();
@@ -24,12 +24,12 @@ test('help est la commande par défaut', async () => {
   }
 });
 
-test('commande inconnue : erreur claire en français, code 1', async () => {
+test('unknown command: clear error, exit code 1', async () => {
   const sb = sandbox();
   try {
     const r = await sb.byt('frobnicate');
     assert.equal(r.code, 1);
-    assert.match(r.stderr, /Commande inconnue : « frobnicate »/);
+    assert.match(r.stderr, /Unknown command: "frobnicate"/);
     const j = await sb.bytJson('frobnicate');
     assert.equal(j.json.ok, false);
     assert.equal(j.json.error.code, 'UNKNOWN_COMMAND');
@@ -38,12 +38,12 @@ test('commande inconnue : erreur claire en français, code 1', async () => {
   }
 });
 
-test('list sans team installée', async () => {
+test('list with no team installed', async () => {
   const sb = sandbox();
   try {
     const r = await sb.byt('list');
     assert.equal(r.code, 0);
-    assert.match(r.stdout, /Aucune team installée/);
+    assert.match(r.stdout, /No team installed/);
     const j = await sb.bytJson('list');
     assert.deepEqual(j.json, { ok: true, command: 'list', data: { teams: [] } });
   } finally {
@@ -51,7 +51,7 @@ test('list sans team installée', async () => {
   }
 });
 
-test('config : lecture et écriture de l\'URL du registry', async () => {
+test('config: reads and writes the registry URL', async () => {
   const sb = sandbox();
   try {
     delete sb.env.BYT_REGISTRY;

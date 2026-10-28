@@ -18,7 +18,7 @@ Arguments: `$ARGUMENTS`
 All file and registry operations go through BYT. Never create, edit or delete team files, agent files or state files yourself.
 
 Take the **first word** of the arguments as the subcommand. No arguments → `help`.
-Talk to the user in their language. BYT itself answers in French.
+Talk to the user in their language. BYT itself answers in English.
 
 When you pass user arguments to BYT, put each one in single quotes (`'like this'`) so the shell never interprets them.
 
@@ -38,7 +38,7 @@ For an unknown subcommand, BYT prints an error that points to `/byt help`.
 
 ## 2. `run <team> <task...>`
 
-The second word is the team name. Everything after it is the task. If either is missing, show `Usage : /byt run <team> <tâche>` and stop.
+The second word is the team name. Everything after it is the task. If either is missing, show `Usage: /byt run <team> <task>` and stop.
 
 **1. Load the team.** Run `BYT info '<team>' --json` and read the JSON.
 - `ok: false` with code `TEAM_NOT_INSTALLED`: tell the user the team is not installed. Ask with AskUserQuestion: "Install it now? (Recommended)" / "Cancel". If they accept, run `BYT install '<team>'`, show the result, then run `info` again. Otherwise stop.

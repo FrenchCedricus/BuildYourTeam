@@ -79,24 +79,24 @@ Warnings count as errors for the public registry: `npm run validate` fails on th
 
 ## Troubleshooting
 
-Validation messages are in French. The most common ones:
+The most common validation messages:
 
 | Message | Fix |
 | --- | --- |
-| `name : « … » ne correspond pas au nom du dossier « … ».` | Make `name` in `team.json` match the folder name under `teams/`. |
-| `agents/<agent>.md : name « … » différent du nom de fichier « … ».` | Make the `name` in the frontmatter match the file name, without `.md`. |
-| `agents/<agent>.md : frontmatter absent (bloc --- en tête de fichier avec name, description, tools, model).` | Start the file with a `---` block, as in the example above. |
-| `agents/<agent>.md : fichier introuvable.` | Every agent listed in `team.json` needs a file `agents/<agent>.md`. |
-| `agents/<file>.md : fichier non déclaré dans team.json (ignoré).` | Add the agent to `agents` in `team.json`, or delete the file. |
-| `agents/<agent>.md : outil inconnu « … ».` | Check the spelling and case of the tool (`Read`, not `read`), and separate tools with commas. |
-| `agents/<agent>.md : le champ « tools » est obligatoire (sans lui, l'agent hériterait de tous les outils).` | Add a `tools:` line listing only what the role needs. |
-| `agents/<agent>.md : clé « … » non autorisée dans le frontmatter` | Remove the key: only `name`, `description`, `tools`, `model` and `color` are allowed. |
-| `lead « … » : a des droits de modification ou d'exécution` | Make the lead read-only (`Read, Grep, Glob`). |
-| `agents/<agent>.md : modèle « … » inhabituel` | Use `haiku`, `sonnet`, `opus`, `inherit` or a `claude-*` id. |
-| `agents/<agent>.md : prompt système très court.` | Write the system prompt below the frontmatter (at least 40 characters). |
-| `author : non renseigné.` | Add `"author": "<your-github-handle>"` to `team.json`. |
-| `version : « … » doit suivre le format semver (ex. « 1.0.0 »).` | Use three numbers, such as `0.1.0`. |
-| `<team>/<lead> ne doit pas avoir Edit` (from `npm test`) | Remove `Edit`, `Write` and `Bash` from the lead's `tools`. |
+| `name: "…" does not match the folder name "…".` | Make `name` in `team.json` match the folder name under `teams/`. |
+| `agents/<agent>.md: name "…" differs from the file name "…".` | Make the `name` in the frontmatter match the file name, without `.md`. |
+| `agents/<agent>.md: missing frontmatter (a --- block at the top of the file with name, description, tools, model).` | Start the file with a `---` block, as in the example above. |
+| `agents/<agent>.md: file not found.` | Every agent listed in `team.json` needs a file `agents/<agent>.md`. |
+| `agents/<file>.md: file not declared in team.json (ignored).` | Add the agent to `agents` in `team.json`, or delete the file. |
+| `agents/<agent>.md: unknown tool "…".` | Check the spelling and case of the tool (`Read`, not `read`), and separate tools with commas. |
+| `agents/<agent>.md: the "tools" field is required (without it, the agent would inherit every tool).` | Add a `tools:` line listing only what the role needs. |
+| `agents/<agent>.md: key "…" is not allowed in the frontmatter` | Remove the key: only `name`, `description`, `tools`, `model` and `color` are allowed. |
+| `lead "…": can edit files or run commands` | Make the lead read-only (`Read, Grep, Glob`). |
+| `agents/<agent>.md: unusual model "…"` | Use `haiku`, `sonnet`, `opus`, `inherit` or a `claude-*` id. |
+| `agents/<agent>.md: system prompt is very short.` | Write the system prompt below the frontmatter (at least 40 characters). |
+| `author: missing.` | Add `"author": "<your-github-handle>"` to `team.json`. |
+| `version: "…" must follow semver (e.g. "1.0.0").` | Use three numbers, such as `0.1.0`. |
+| `<team>/<lead> must not have Edit` (from `npm test`) | Remove `Edit`, `Write` and `Bash` from the lead's `tools`. |
 
 ## Quality guidelines
 

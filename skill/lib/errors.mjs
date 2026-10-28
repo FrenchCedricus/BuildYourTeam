@@ -1,4 +1,4 @@
-// Erreurs métier : un code stable (pour --json), un message en français et une piste de solution.
+// Domain errors: a stable code (for --json), a message and a hint towards a fix.
 export class BytError extends Error {
   constructor(code, message, hint) {
     super(message);
@@ -9,38 +9,38 @@ export class BytError extends Error {
 }
 
 export const errors = {
-  usage: (usage) => new BytError('USAGE', 'Arguments manquants ou invalides.', `Usage : ${usage}`),
+  usage: (usage) => new BytError('USAGE', 'Missing or invalid arguments.', `Usage: ${usage}`),
   unknownCommand: (cmd) =>
-    new BytError('UNKNOWN_COMMAND', `Commande inconnue : « ${cmd} ».`, 'Tapez « byt help » pour voir les commandes disponibles.'),
+    new BytError('UNKNOWN_COMMAND', `Unknown command: "${cmd}".`, 'Type "byt help" to see the available commands.'),
   teamNotInstalled: (name) =>
-    new BytError('TEAM_NOT_INSTALLED', `La team « ${name} » n'est pas installée.`, `Installez-la avec : /byt install ${name}`),
+    new BytError('TEAM_NOT_INSTALLED', `Team "${name}" is not installed.`, `Install it with: /byt install ${name}`),
   teamNotInRegistry: (name) =>
-    new BytError('TEAM_NOT_IN_REGISTRY', `La team « ${name} » est introuvable dans le registry.`, 'Cherchez une team avec : /byt search <mot>'),
+    new BytError('TEAM_NOT_IN_REGISTRY', `Team "${name}" was not found in the registry.`, 'Search for a team with: /byt search <word>'),
   teamExists: (name, scope) =>
     new BytError(
       'TEAM_EXISTS',
-      `La team « ${name} » existe déjà (${scopeLabel(scope)}).`,
-      `Utilisez /byt update ${name}, ou ajoutez --force pour la remplacer.`
+      `Team "${name}" already exists (${scopeLabel(scope)}).`,
+      `Use /byt update ${name}, or add --force to replace it.`
     ),
   agentNotFound: (team, agent) =>
-    new BytError('AGENT_NOT_FOUND', `L'agent « ${agent} » n'existe pas dans la team « ${team} ».`, `Voir ses agents : /byt info ${team}`),
+    new BytError('AGENT_NOT_FOUND', `Agent "${agent}" does not exist in team "${team}".`, `See its agents: /byt info ${team}`),
   invalidName: (kind, name) =>
     new BytError(
       'INVALID_NAME',
-      `Nom de ${kind} invalide : « ${name} ».`,
-      'Utilisez le kebab-case : lettres minuscules, chiffres et tirets (ex. « mon-agent »).'
+      `Invalid ${kind} name: "${name}".`,
+      'Use kebab-case: lowercase letters, digits and hyphens (e.g. "my-agent").'
     ),
-  invalidJson: (what, detail) => new BytError('INVALID_JSON', `JSON invalide (${what}) : ${detail}`),
+  invalidJson: (what, detail) => new BytError('INVALID_JSON', `Invalid JSON (${what}): ${detail}`),
   conflictingScopes: () =>
-    new BytError('CONFLICTING_SCOPES', 'Les options --project et --global ne peuvent pas être utilisées ensemble.'),
+    new BytError('CONFLICTING_SCOPES', 'The --project and --global options cannot be used together.'),
   projectScopeUnavailable: () =>
     new BytError(
       'PROJECT_SCOPE_UNAVAILABLE',
-      'Le mode projet est indisponible : le dossier courant est votre dossier personnel.',
-      'Placez-vous dans le dossier d\'un projet, ou utilisez --global.'
+      'Project scope is unavailable: the current folder is your home folder.',
+      'Move to a project folder, or use --global.'
     ),
 };
 
 export function scopeLabel(scope) {
-  return scope === 'project' ? 'projet' : 'global';
+  return scope === 'project' ? 'project' : 'global';
 }

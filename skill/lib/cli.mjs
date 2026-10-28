@@ -23,7 +23,7 @@ export function parseArgs(argv) {
       if (value === undefined) {
         if (BOOLEAN_FLAGS.has(key)) value = true;
         else if (i + 1 < argv.length) value = argv[++i];
-        else throw errors.usage(`--${key} <valeur>`);
+        else throw errors.usage(`--${key} <value>`);
       }
       flags[key] = value;
     } else {
@@ -33,7 +33,7 @@ export function parseArgs(argv) {
   return { command: positionals[0], _: positionals.slice(1), flags };
 }
 
-// Point d'entrée testable : toutes les entrées/sorties sont injectables.
+// Testable entry point: every input and output can be injected.
 export async function main(argv, io = {}) {
   const stdout = io.stdout ?? process.stdout;
   const stderr = io.stderr ?? process.stderr;

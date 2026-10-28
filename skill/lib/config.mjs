@@ -5,7 +5,7 @@ import { BytError } from './errors.mjs';
 export const DEFAULT_REGISTRY = 'https://raw.githubusercontent.com/FrenchCedricus/BuildYourTeam/main';
 
 const KEYS = {
-  registry: 'URL de base du registry (dossier contenant registry.json)',
+  registry: 'Base URL of the registry (folder that contains registry.json)',
 };
 
 function configPath(ctx) {
@@ -21,7 +21,7 @@ export function loadConfig(ctx) {
 
 export function setConfig(ctx, key, value) {
   if (!Object.hasOwn(KEYS, key)) {
-    throw new BytError('UNKNOWN_CONFIG_KEY', `Clé de configuration inconnue : « ${key} ».`, `Clés disponibles : ${Object.keys(KEYS).join(', ')}`);
+    throw new BytError('UNKNOWN_CONFIG_KEY', `Unknown configuration key: "${key}".`, `Available keys: ${Object.keys(KEYS).join(', ')}`);
   }
   const stored = readJson(configPath(ctx), {});
   stored[key] = value;

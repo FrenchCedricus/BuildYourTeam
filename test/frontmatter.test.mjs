@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { parseFrontmatter, renderFrontmatter, setFrontmatterField, splitTools } from '../skill/lib/frontmatter.mjs';
 
 // U01
-test('frontmatter : aller-retour render → parse fidèle', () => {
+test('frontmatter: render → parse round trip is lossless', () => {
   const values = {
     colon: 'Use it: always',
     hash: 'Read it #now',
@@ -23,27 +23,27 @@ test('frontmatter : aller-retour render → parse fidèle', () => {
   assert.equal(fm.body.trim(), 'Body');
 });
 
-test('frontmatter : renderFrontmatter protège les valeurs ambiguës pour un parseur YAML', () => {
+test('frontmatter: renderFrontmatter protects values that are ambiguous for a YAML parser', () => {
   const out = renderFrontmatter({ a: 'x: y', b: 'x #y', c: 'x:', d: '-x', e: 'x ', f: 'l1\nl2', g: 'Read, Grep' }, 'B');
   assert.equal(out, '---\na: "x: y"\nb: "x #y"\nc: "x:"\nd: "-x"\ne: "x "\nf: "l1\\nl2"\ng: Read, Grep\n---\n\nB\n');
 });
 
-test('frontmatter : renderFrontmatter omet undefined, null et chaîne vide', () => {
+test('frontmatter: renderFrontmatter omits undefined, null and empty strings', () => {
   const out = renderFrontmatter({ name: 'a', undef: undefined, nul: null, empty: '' }, 'B');
   assert.equal(out, '---\nname: a\n---\n\nB\n');
 });
 
 // U02
-test('parseFrontmatter : BOM, commentaires, apostrophes doublées, clés invalides ignorées, fence en fin de fichier', () => {
+test('parseFrontmatter: BOM, comments, doubled apostrophes, invalid keys ignored, fence at end of file', () => {
   const text = [
     '\uFEFF---',
     '# commentaire',
-    '   # commentaire indenté',
+    '   # indented comment',
     '',
     "description: 'it''s ok'",
-    'bad key: ignorée',
-    'ké: ignorée',
-    'ligne sans deux-points',
+    'bad key: ignored',
+    'ké: ignored',
+    'line without a colon',
     'name: a',
     '---',
   ].join('\n');
@@ -52,39 +52,39 @@ test('parseFrontmatter : BOM, commentaires, apostrophes doublées, clés invalid
   assert.equal(fm.body, '');
 });
 
-test('parseFrontmatter : guillemets doubles au JSON invalide → contenu brut entre guillemets', () => {
+test('parseFrontmatter: double quotes with invalid JSON → raw content between the quotes', () => {
   const fm = parseFrontmatter('---\nd: "a\\q"\n---\n');
   assert.equal(fm.data.d, 'a\\q');
 });
 
-test('parseFrontmatter : sans fence fermante → null', () => {
+test('parseFrontmatter: no closing fence → null', () => {
   assert.equal(parseFrontmatter('---\nname: a\n'), null);
 });
 
 // U03
-test('setFrontmatterField : ajoute la clé absente en tête', () => {
+test('setFrontmatterField: adds a missing key at the top', () => {
   const out = setFrontmatterField('---\nname: a\n---\n\nBody\n', 'model', 'opus');
   assert.equal(out, '---\nmodel: opus\nname: a\n---\n\nBody\n');
 });
 
-test('setFrontmatterField : met la valeur entre guillemets si nécessaire', () => {
+test('setFrontmatterField: quotes the value when needed', () => {
   const out = setFrontmatterField('---\nname: a\ndescription: x\n---\n\nBody\n', 'description', 'Role: test');
   assert.equal(out, '---\nname: a\ndescription: "Role: test"\n---\n\nBody\n');
   assert.equal(parseFrontmatter(out).data.description, 'Role: test');
 });
 
-test('setFrontmatterField : ne touche pas au corps qui contient la même clé', () => {
+test('setFrontmatterField: leaves a body containing the same key alone', () => {
   const out = setFrontmatterField('---\nname: a\n---\n\nname: corps\n', 'name', 'b');
   assert.equal(out, '---\nname: b\n---\n\nname: corps\n');
 });
 
-test('setFrontmatterField : texte sans frontmatter inchangé', () => {
+test('setFrontmatterField: text without frontmatter unchanged', () => {
   const text = 'Pas de frontmatter\nname: x\n';
   assert.equal(setFrontmatterField(text, 'name', 'y'), text);
 });
 
 // U04
-test('splitTools : crochets, virgules en trop, vide', () => {
+test('splitTools: brackets, extra commas, empty', () => {
   assert.deepEqual(splitTools('[Read, Grep]'), ['Read', 'Grep']);
   assert.deepEqual(splitTools('Read,, Grep ,'), ['Read', 'Grep']);
   assert.deepEqual(splitTools('Bash(git *), mcp__x'), ['Bash(git *)', 'mcp__x']);

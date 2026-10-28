@@ -14,7 +14,7 @@ function withRegistry(teams) {
 
 const globalAgents = (sb) => path.join(sb.dirs.claudeDir, 'agents');
 
-test('install : télécharge, enregistre et synchronise', async () => {
+test('install: downloads, records and syncs', async () => {
   const sb = withRegistry([{ name: 'dev', agents: ['lead', 'backend'] }]);
   try {
     const r = await sb.bytJson('install', 'dev');
@@ -36,7 +36,7 @@ test('install : télécharge, enregistre et synchronise', async () => {
   }
 });
 
-test('install accepte une URL file://', async () => {
+test('install accepts a file:// URL', async () => {
   const sb = withRegistry([{ name: 'dev' }]);
   try {
     sb.env.BYT_REGISTRY = pathToFileURL(sb.dirs.registry).href;
@@ -47,7 +47,7 @@ test('install accepte une URL file://', async () => {
   }
 });
 
-test('install --project : stockage et agents dans le projet', async () => {
+test('install --project: storage and agents in the project', async () => {
   const sb = withRegistry([{ name: 'dev', agents: ['lead'] }]);
   try {
     const r = await sb.bytJson('install', 'dev', '--project');
@@ -62,12 +62,12 @@ test('install --project : stockage et agents dans le projet', async () => {
   }
 });
 
-test('install : erreurs claires (team inconnue, team invalide, chemin dangereux)', async () => {
+test('install: clear errors (unknown team, invalid team, unsafe path)', async () => {
   const sb = withRegistry([{ name: 'dev' }, { name: 'broken' }]);
   try {
     const unknown = await sb.byt('install', 'ghost');
     assert.equal(unknown.code, 1);
-    assert.match(unknown.stderr, /« ghost » est introuvable dans le registry/);
+    assert.match(unknown.stderr, /"ghost" was not found in the registry/);
 
     fs.rmSync(path.join(sb.dirs.registry, 'teams', 'broken', 'agents', 'worker.md'));
     const reg = JSON.parse(fs.readFileSync(path.join(sb.dirs.registry, 'registry.json'), 'utf8'));
@@ -77,7 +77,7 @@ test('install : erreurs claires (team inconnue, team invalide, chemin dangereux)
 
     const broken = await sb.bytJson('install', 'broken');
     assert.equal(broken.json.error.code, 'TEAM_INVALID');
-    assert.ok(!fs.existsSync(path.join(sb.dirs.bytHome, 'teams', 'broken')), 'rien n\'est installé');
+    assert.ok(!fs.existsSync(path.join(sb.dirs.bytHome, 'teams', 'broken')), 'nothing is installed');
 
     const evil = await sb.bytJson('install', 'dev');
     assert.equal(evil.json.error.code, 'REGISTRY_UNSAFE_PATH');
@@ -86,7 +86,7 @@ test('install : erreurs claires (team inconnue, team invalide, chemin dangereux)
   }
 });
 
-test('uninstall : supprime la team et nettoie ses agents', async () => {
+test('uninstall: deletes the team and cleans up its agents', async () => {
   const sb = withRegistry([{ name: 'dev' }, { name: 'qa' }]);
   try {
     await sb.byt('install', 'dev');
@@ -102,7 +102,7 @@ test('uninstall : supprime la team et nettoie ses agents', async () => {
   }
 });
 
-test('update : met à jour en conservant les agents désactivés, ignore les teams à jour', async () => {
+test('update: updates while keeping disabled agents, skips up-to-date teams', async () => {
   const sb = withRegistry([{ name: 'dev', agents: ['lead', 'backend', 'docs'] }]);
   try {
     await sb.byt('install', 'dev');
@@ -117,17 +117,17 @@ test('update : met à jour en conservant les agents désactivés, ignore les tea
     assert.deepEqual(r.json.data.results[0], { team: 'dev', scope: 'global', status: 'updated', from: '1.0.0', version: '1.1.0' });
 
     const team = JSON.parse(fs.readFileSync(path.join(sb.dirs.bytHome, 'teams', 'dev', 'team.json'), 'utf8'));
-    assert.equal(team.agents.find((a) => a.name === 'docs').enabled, false, 'docs reste désactivé');
+    assert.equal(team.agents.find((a) => a.name === 'docs').enabled, false, 'docs stays disabled');
     assert.deepEqual(agentsIn(globalAgents(sb)), ['byt-dev-backend.md', 'byt-dev-frontend.md', 'byt-dev-lead.md']);
   } finally {
     sb.cleanup();
   }
 });
 
-test('list --available, search et info', async () => {
+test('list --available, search and info', async () => {
   const sb = withRegistry([
-    { name: 'dev', tags: ['backend', 'web'], description: 'Développement logiciel' },
-    { name: 'game', tags: ['jeu'], description: 'Création de jeux vidéo' },
+    { name: 'dev', tags: ['backend', 'web'], description: 'Software development' },
+    { name: 'game', tags: ['jeu'], description: 'Création de jeux vidéo (accent test)' },
   ]);
   try {
     await sb.byt('install', 'dev');
@@ -135,7 +135,7 @@ test('list --available, search et info', async () => {
     assert.deepEqual(avail.json.data.teams.map((t) => [t.name, t.installed]), [['dev', true], ['game', false]]);
 
     const s = await sb.bytJson('search', 'VIDEO');
-    assert.deepEqual(s.json.data.results.map((t) => t.name), ['game'], 'recherche insensible à la casse et aux accents');
+    assert.deepEqual(s.json.data.results.map((t) => t.name), ['game'], 'search ignores case and accents');
     const byTag = await sb.bytJson('search', 'backend');
     assert.deepEqual(byTag.json.data.results.map((t) => t.name), ['dev']);
 
@@ -146,26 +146,26 @@ test('list --available, search et info', async () => {
     assert.deepEqual(installed.json.data.agents[0].tools, ['Read', 'Grep', 'Glob']);
 
     const remote = await sb.byt('info', 'game');
-    assert.match(remote.stdout, /non installée/);
+    assert.match(remote.stdout, /not installed/);
     assert.match(remote.stdout, /\/byt install game/);
   } finally {
     sb.cleanup();
   }
 });
 
-test('registry injoignable : message clair', async () => {
+test('unreachable registry: clear message', async () => {
   const sb = sandbox();
   try {
     sb.env.BYT_REGISTRY = 'https://127.0.0.1:9';
     const r = await sb.byt('list', '--available');
     assert.equal(r.code, 1);
-    assert.match(r.stderr, /Impossible de joindre le registry/);
+    assert.match(r.stderr, /Cannot reach the registry/);
   } finally {
     sb.cleanup();
   }
 });
 
-test('registry en http:// refusé (REGISTRY_INSECURE)', async () => {
+test('http:// registry refused (REGISTRY_INSECURE)', async () => {
   const sb = sandbox();
   try {
     sb.env.BYT_REGISTRY = 'http://127.0.0.1:9';

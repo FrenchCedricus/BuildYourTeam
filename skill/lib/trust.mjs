@@ -1,9 +1,9 @@
 import path from 'node:path';
 import { readJson, writeJson } from './fsutil.mjs';
 
-// Teams de projet approuvées par l'utilisateur. Le fichier vit dans ~/.byt, hors du dépôt :
-// un .byt/ livré dans un dépôt cloné ne peut donc pas se déclarer lui-même digne de confiance.
-// { "teams": ["<dossier absolu de la team>", ...] }
+// Project teams approved by the user. The file lives in ~/.byt, outside the repository,
+// so a .byt/ folder shipped in a cloned repository cannot mark itself as trusted.
+// { "teams": ["<absolute team folder>", ...] }
 function trustPath(ctx) {
   return path.join(ctx.bytHome, 'trust.json');
 }
@@ -18,7 +18,7 @@ function key(dir) {
   return process.platform === 'win32' ? p.toLowerCase() : p;
 }
 
-// Les teams globales sont installées par l'utilisateur lui-même : toujours approuvées.
+// Global teams are installed by the user: always trusted.
 export function isTrusted(ctx, scope, dir) {
   if (scope !== 'project') return true;
   return load(ctx).includes(key(dir));
