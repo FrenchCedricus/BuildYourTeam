@@ -1,0 +1,16 @@
+{
+  "name": "brainstorming",
+  "version": "1.0.0",
+  "description": "A structured brainstorming panel: bold ideas, honest critique, practical grounding and a clear synthesis.",
+  "author": "FrenchCedricus",
+  "tags": ["brainstorming", "ideation", "strategy", "product", "decision"],
+  "lead": "facilitator",
+  "mode": "subagents",
+  "agents": [
+    { "name": "facilitator", "enabled": true },
+    { "name": "visionary", "enabled": true },
+    { "name": "critic", "enabled": true },
+    { "name": "pragmatist", "enabled": true },
+    { "name": "synthesizer", "enabled": true }
+  ]
+}

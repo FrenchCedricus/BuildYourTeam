@@ -1,0 +1,17 @@
+{
+  "name": "software-dev",
+  "version": "1.0.0",
+  "description": "A full software team: design, backend, frontend, independent review and documentation.",
+  "author": "FrenchCedricus",
+  "tags": ["dev", "web", "backend", "frontend", "code-review"],
+  "lead": "lead",
+  "mode": "subagents",
+  "agents": [
+    { "name": "lead", "enabled": true },
+    { "name": "architect", "enabled": true },
+    { "name": "backend", "enabled": true },
+    { "name": "frontend", "enabled": true },
+    { "name": "reviewer", "enabled": true },
+    { "name": "docs", "enabled": true }
+  ]
+}

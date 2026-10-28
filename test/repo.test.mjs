@@ -1,0 +1,53 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import { buildRegistry } from '../scripts/build-registry.mjs';
+import { parseFrontmatter, splitTools } from '../skill/lib/frontmatter.mjs';
+import { sandbox, REPO_ROOT, agentsIn } from './helpers.mjs';
+
+test('les teams du repo sont valides en mode strict et registry.json est à jour', () => {
+  const { results, registry } = buildRegistry(path.join(REPO_ROOT, 'teams'));
+  for (const r of results) assert.ok(r.ok, `${r.name} :\n${[...r.errors, ...r.warnings].join('\n')}`);
+  const current = fs.readFileSync(path.join(REPO_ROOT, 'registry.json'), 'utf8').replace(/\r\n/g, '\n');
+  assert.equal(current, JSON.stringify(registry, null, 2) + '\n', 'lancez « npm run build:registry »');
+  assert.deepEqual(registry.teams.map((t) => t.name).sort(), ['brainstorming', 'game-dev', 'software-dev', 'testing']);
+});
+
+test('les agents en lecture seule n\'ont ni Edit, ni Write, ni Bash', () => {
+  const readOnly = {
+    'software-dev': ['lead', 'architect', 'reviewer'],
+    testing: ['lead', 'test-planner'],
+    'game-dev': ['lead'],
+    brainstorming: ['facilitator', 'visionary', 'critic', 'pragmatist', 'synthesizer'],
+  };
+  for (const [team, agents] of Object.entries(readOnly)) {
+    for (const a of agents) {
+      const fm = parseFrontmatter(fs.readFileSync(path.join(REPO_ROOT, 'teams', team, 'agents', `${a}.md`), 'utf8'));
+      const tools = splitTools(fm.data.tools);
+      for (const t of ['Edit', 'Write', 'Bash']) assert.ok(!tools.includes(t), `${team}/${a} ne doit pas avoir ${t}`);
+    }
+  }
+});
+
+test('installation de bout en bout depuis le registry du repo', async () => {
+  const sb = sandbox();
+  try {
+    sb.env.BYT_REGISTRY = REPO_ROOT;
+    const r = await sb.bytJson('install', 'software-dev');
+    assert.equal(r.json.ok, true, r.stdout);
+    assert.deepEqual(agentsIn(path.join(sb.dirs.claudeDir, 'agents')), [
+      'byt-software-dev-architect.md',
+      'byt-software-dev-backend.md',
+      'byt-software-dev-docs.md',
+      'byt-software-dev-frontend.md',
+      'byt-software-dev-lead.md',
+      'byt-software-dev-reviewer.md',
+    ]);
+    const info = await sb.bytJson('info', 'software-dev');
+    assert.equal(info.json.data.lead, 'lead');
+    assert.ok(info.json.data.leadFile.endsWith(path.join('software-dev', 'agents', 'lead.md')));
+  } finally {
+    sb.cleanup();
+  }
+});

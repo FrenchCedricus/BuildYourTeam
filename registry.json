@@ -1,0 +1,131 @@
+{
+  "schema": 1,
+  "teams": [
+    {
+      "name": "brainstorming",
+      "version": "1.0.0",
+      "description": "A structured brainstorming panel: bold ideas, honest critique, practical grounding and a clear synthesis.",
+      "author": "FrenchCedricus",
+      "tags": [
+        "brainstorming",
+        "ideation",
+        "strategy",
+        "product",
+        "decision"
+      ],
+      "mode": "subagents",
+      "lead": "facilitator",
+      "agents": [
+        "facilitator",
+        "visionary",
+        "critic",
+        "pragmatist",
+        "synthesizer"
+      ],
+      "path": "teams/brainstorming",
+      "files": [
+        "team.json",
+        "agents/facilitator.md",
+        "agents/visionary.md",
+        "agents/critic.md",
+        "agents/pragmatist.md",
+        "agents/synthesizer.md"
+      ]
+    },
+    {
+      "name": "game-dev",
+      "version": "1.0.0",
+      "description": "A small game studio: game design, gameplay programming, level design and playtesting.",
+      "author": "FrenchCedricus",
+      "tags": [
+        "game",
+        "gamedev",
+        "design",
+        "gameplay",
+        "playtest"
+      ],
+      "mode": "subagents",
+      "lead": "lead",
+      "agents": [
+        "lead",
+        "game-designer",
+        "gameplay-dev",
+        "level-designer",
+        "playtester"
+      ],
+      "path": "teams/game-dev",
+      "files": [
+        "team.json",
+        "agents/lead.md",
+        "agents/game-designer.md",
+        "agents/gameplay-dev.md",
+        "agents/level-designer.md",
+        "agents/playtester.md"
+      ]
+    },
+    {
+      "name": "software-dev",
+      "version": "1.0.0",
+      "description": "A full software team: design, backend, frontend, independent review and documentation.",
+      "author": "FrenchCedricus",
+      "tags": [
+        "dev",
+        "web",
+        "backend",
+        "frontend",
+        "code-review"
+      ],
+      "mode": "subagents",
+      "lead": "lead",
+      "agents": [
+        "lead",
+        "architect",
+        "backend",
+        "frontend",
+        "reviewer",
+        "docs"
+      ],
+      "path": "teams/software-dev",
+      "files": [
+        "team.json",
+        "agents/lead.md",
+        "agents/architect.md",
+        "agents/backend.md",
+        "agents/frontend.md",
+        "agents/reviewer.md",
+        "agents/docs.md"
+      ]
+    },
+    {
+      "name": "testing",
+      "version": "1.0.0",
+      "description": "A QA team: risk-based test planning, unit and end-to-end tests, and root-cause bug hunting.",
+      "author": "FrenchCedricus",
+      "tags": [
+        "testing",
+        "qa",
+        "unit-tests",
+        "e2e",
+        "debugging"
+      ],
+      "mode": "subagents",
+      "lead": "lead",
+      "agents": [
+        "lead",
+        "test-planner",
+        "unit-tester",
+        "e2e-tester",
+        "bug-hunter"
+      ],
+      "path": "teams/testing",
+      "files": [
+        "team.json",
+        "agents/lead.md",
+        "agents/test-planner.md",
+        "agents/unit-tester.md",
+        "agents/e2e-tester.md",
+        "agents/bug-hunter.md"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "name": "game-dev",
+  "version": "1.0.0",
+  "description": "A small game studio: game design, gameplay programming, level design and playtesting.",
+  "author": "FrenchCedricus",
+  "tags": ["game", "gamedev", "design", "gameplay", "playtest"],
+  "lead": "lead",
+  "mode": "subagents",
+  "agents": [
+    { "name": "lead", "enabled": true },
+    { "name": "game-designer", "enabled": true },
+    { "name": "gameplay-dev", "enabled": true },
+    { "name": "level-designer", "enabled": true },
+    { "name": "playtester", "enabled": true }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "name": "testing",
+  "version": "1.0.0",
+  "description": "A QA team: risk-based test planning, unit and end-to-end tests, and root-cause bug hunting.",
+  "author": "FrenchCedricus",
+  "tags": ["testing", "qa", "unit-tests", "e2e", "debugging"],
+  "lead": "lead",
+  "mode": "subagents",
+  "agents": [
+    { "name": "lead", "enabled": true },
+    { "name": "test-planner", "enabled": true },
+    { "name": "unit-tester", "enabled": true },
+    { "name": "e2e-tester", "enabled": true },
+    { "name": "bug-hunter", "enabled": true }
+  ]
+}
