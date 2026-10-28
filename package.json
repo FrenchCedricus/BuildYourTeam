@@ -1,0 +1,30 @@
+{
+  "name": "buildyourteam",
+  "version": "0.1.0",
+  "description": "Manage teams of Claude Code subagents from a single /byt command, with a community registry.",
+  "type": "module",
+  "license": "MIT",
+  "author": "FrenchCedricus",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/FrenchCedricus/BuildYourTeam.git"
+  },
+  "bin": {
+    "byt": "skill/byt.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "test": "node --test \"test/**/*.test.mjs\"",
+    "validate": "node scripts/build-registry.mjs --validate-only",
+    "build:registry": "node scripts/build-registry.mjs"
+  },
+  "keywords": [
+    "claude-code",
+    "subagents",
+    "agents",
+    "skills",
+    "ai"
+  ]
+}
