@@ -37,14 +37,14 @@ cd BuildYourTeam
 ./install.sh        # or .\install.ps1 on Windows
 ```
 
-The installer copies the skill to `~/.claude/skills/byt/` and creates `~/.byt/`. Restart Claude Code if `/byt` does not show up.
+The installer copies the skill to `~/.claude/skills/byt/` (or `$CLAUDE_CONFIG_DIR/skills/byt/`) and creates `~/.byt/` (or `$BYT_HOME`). With the one-line installer, set `BYT_BRANCH` to install from another branch than `main` (from a clone, the checked-out files are installed). Running it again replaces the skill folder; your teams in `~/.byt/` are kept. Restart Claude Code if `/byt` does not show up.
 
 ## Quick start
 
 ```text
 /byt list --available          # browse the registry
 /byt install software-dev      # install a team
-/byt info software-dev         # see its agents, tools and models
+/byt info software-dev         # see its agents, tools and models (once installed)
 /byt run software-dev "Fix the failing login test"
 ```
 
@@ -56,7 +56,7 @@ The installer copies the skill to `~/.claude/skills/byt/` and creates `~/.byt/`.
 | `/byt list` | Installed teams, with active and inactive agents |
 | `/byt list --available` | Teams available in the registry |
 | `/byt search <word>` | Search the registry by name, description or tag |
-| `/byt info <team>` | Details of a team and its agents |
+| `/byt info <team>` | Details of a team and its agents (tools and models only for installed teams; registry teams show agent names) |
 | `/byt install <team>` | Install a team from the registry |
 | `/byt uninstall <team>` | Remove a team |
 | `/byt update [team]` | Update one team, or all of them |
@@ -67,9 +67,19 @@ The installer copies the skill to `~/.claude/skills/byt/` and creates `~/.byt/`.
 | `/byt new [team]` | Create a team with a guided wizard |
 | `/byt add-agent <team>` | Add an agent to a team |
 | `/byt remove-agent <team> <agent>` | Remove an agent from a team |
-| `/byt validate [team]` | Check a team's files |
+| `/byt validate [team\|folder] [--strict]` | Check a team's files (`--strict`: warnings fail too) |
+| `/byt sync` | Re-sync active agents into `.claude/agents/` |
+| `/byt config [key] [value]` | Show or change the configuration |
+| `/byt version` | Show the BYT version |
 
-**Options:** `--project` / `--global` (where to install), `--from <team>` (start `new` from an existing team), `--json` (machine-readable output), `--force`.
+**Options:**
+
+- `--project` / `--global`: where to act. `install` defaults to global, `new` to the current project; the other commands look in the project first, then global.
+- `--from <team>`: start `new` from an existing team.
+- `--data <json|->`: JSON input for `new` and `add-agent` (`-` reads it from stdin).
+- `--json`: machine-readable output.
+- `--force`: replace an existing team (`install`, `new`), re-download on `update` even when up to date, and confirm the deletion of a local team on `uninstall`.
+- `-h` / `--help`, `--version`.
 
 ## Teams in the registry
 
@@ -91,7 +101,7 @@ The installer copies the skill to `~/.claude/skills/byt/` and creates `~/.byt/`.
 | `translation` | Translation and localization | lead, terminologist, translator, localization-engineer, cultural-reviewer, linguistic-qa |
 | `brainstorming` | Ideas and decisions | facilitator, visionary, critic, pragmatist, synthesizer |
 
-Each agent gets only the tools its role needs. Leads, reviewers and auditors are read-only. Only the roles that must run commands get `Bash`, and only research roles get web access.
+Each agent gets only the tools its role needs. Leads never edit files or run commands. Roles that must run commands (developers, engineers, testers) get `Bash`; writers, designers and translators do not. Some reviewers and auditors get it too, to run checks (for example `doc-reviewer`, `accessibility-reviewer`, `dependency-auditor`). Only roles that need sources get web access (`WebSearch`, `WebFetch`), such as `scout`, `fact-checker`, `seo-specialist` or `terminologist`.
 
 ## Create your own team
 
@@ -109,8 +119,22 @@ Want to share yours? See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 - **One skill, one script.** `/byt` is a skill that hands every deterministic command to `byt.mjs`, a dependency-free Node.js script. Only `run`, `new` and `add-agent` use Claude's reasoning.
 - **Safe sync.** Only *active* agents are copied to `~/.claude/agents/` (or `.claude/agents/` in project mode), named `byt-<team>-<agent>.md`. BYT never touches agent files it did not create.
-- **Two modes.** `subagents` (default): Claude acts as the lead and delegates to subagents. `agent-team`: the agents become teammates in an [agent team](https://code.claude.com/docs/en/agent-teams). This mode is experimental and needs `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`.
-- **Configurable registry.** The default registry is this repository. Point BYT at your own with `node ~/.claude/skills/byt/byt.mjs config registry <url>`.
+- **Two modes.** `subagents` (default): Claude acts as the lead and delegates to subagents. `agent-team`: the agents become teammates in an [agent team](https://code.claude.com/docs/en/agent-teams). This mode is experimental and needs `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`, set in your environment or in the `env` block of `~/.claude/settings.json`, `.claude/settings.json` or `.claude/settings.local.json`.
+- **Configurable registry.** The default registry is this repository. Point BYT at your own with `node ~/.claude/skills/byt/byt.mjs config registry <url>`, where `<url>` is the folder that contains `registry.json` (an http(s) URL, a `file://` URL or a local path). The `BYT_REGISTRY` environment variable overrides it.
+
+### Configuration & environment
+
+| Variable | Effect |
+| --- | --- |
+| `BYT_HOME` | BYT data folder (default `~/.byt`) |
+| `BYT_CLAUDE_DIR` | Claude Code folder used by the CLI; takes priority over `CLAUDE_CONFIG_DIR` (default `~/.claude`) |
+| `BYT_REGISTRY` | Registry location, overrides `config registry` |
+| `BYT_AUTHOR` | Default author of the teams you create (default: your system user name) |
+| `BYT_DEBUG` | Print the stack trace of unexpected errors |
+| `NO_COLOR` | Disable colours |
+| `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` | Enables the `agent-team` mode |
+
+Files: `~/.byt/config.json` (configuration), `~/.byt/state.json` (global scope) and `./.byt/state.json` (project scope). A state file lists the installed teams, whether they are enabled, and the `byt-*.md` agent files BYT wrote; `sync` never touches `byt-*.md` files it did not write. Project scope is unavailable when the current folder is your home folder. Team and agent names are kebab-case, 64 characters at most.
 
 ### Team format
 
@@ -142,7 +166,7 @@ Each `agents/<name>.md` file is a standard [Claude Code subagent](https://code.c
 
 ## Standalone CLI
 
-`byt.mjs` also works without Claude Code, and every command accepts `--json`:
+`byt.mjs` also works without Claude Code, and every command accepts `--json`. Exceptions: `run` needs Claude Code and returns an error in a terminal, and `new` / `add-agent` with `--json` need their input through `--data`. JSON output is `{"ok": true, "command": "...", "data": ...}` on success and `{"ok": false, "error": {"code", "message", "hint", "data"}}` on failure (`hint` and `data` only when present).
 
 ```bash
 node ~/.claude/skills/byt/byt.mjs list --json
@@ -150,14 +174,14 @@ node ~/.claude/skills/byt/byt.mjs new          # interactive wizard in the termi
 node ~/.claude/skills/byt/byt.mjs new my-team --data '{"description":"...","agents":[{"name":"lead"},{"name":"backend"}]}'
 ```
 
-The CLI output is currently in French.
+The CLI output and the installer messages are currently in French.
 
 ## Development
 
 ```bash
 npm test                  # node:test, no dependencies
 npm run validate          # validate every team in teams/
-npm run build:registry    # regenerate registry.json
+npm run build:registry    # regenerate registry.json (maintainers only; CI does it on every push to main)
 ```
 
 ## License
