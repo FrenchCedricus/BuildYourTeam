@@ -6,12 +6,13 @@ import { buildRegistry } from '../scripts/build-registry.mjs';
 import { parseFrontmatter, splitTools } from '../skill/lib/frontmatter.mjs';
 import { sandbox, REPO_ROOT, agentsIn } from './helpers.mjs';
 
-test('les teams du repo sont valides en mode strict et registry.json est à jour', () => {
+// registry.json est régénéré par la GitHub Action après merge : on ne vérifie ici que la validité.
+test('les teams du repo sont valides en mode strict', () => {
   const { results, registry } = buildRegistry(path.join(REPO_ROOT, 'teams'));
   for (const r of results) assert.ok(r.ok, `${r.name} :\n${[...r.errors, ...r.warnings].join('\n')}`);
-  const current = fs.readFileSync(path.join(REPO_ROOT, 'registry.json'), 'utf8').replace(/\r\n/g, '\n');
-  assert.equal(current, JSON.stringify(registry, null, 2) + '\n', 'lancez « npm run build:registry »');
-  assert.deepEqual(registry.teams.map((t) => t.name).sort(), ['brainstorming', 'game-dev', 'software-dev', 'testing']);
+  for (const name of ['brainstorming', 'game-dev', 'software-dev', 'testing']) {
+    assert.ok(registry.teams.some((t) => t.name === name), `team de départ manquante : ${name}`);
+  }
 });
 
 test('les agents en lecture seule n\'ont ni Edit, ni Write, ni Bash', () => {

@@ -11,7 +11,7 @@ export function createContext({ env = process.env, cwd = process.cwd() } = {}) {
     env,
     cwd: path.resolve(cwd),
     bytHome: path.resolve(env.BYT_HOME || path.join(home, '.byt')),
-    claudeDir: path.resolve(env.BYT_CLAUDE_DIR || path.join(home, '.claude')),
+    claudeDir: path.resolve(env.BYT_CLAUDE_DIR || env.CLAUDE_CONFIG_DIR || path.join(home, '.claude')),
   };
 }
 
