@@ -1,11 +1,13 @@
 import path from 'node:path';
 import { BytError, errors, scopeLabel } from './errors.mjs';
-import { availableScopes, scopePaths, searchScopes } from './context.mjs';
-import { validateTeam, loadTeam, saveTeam } from './team.mjs';
+import { availableScopes, scopePaths, searchScopes, resolveScope, agentTeamsEnabled } from './context.mjs';
+import { validateTeam, loadTeam, saveTeam, readAgent, isValidName, compareVersions } from './team.mjs';
+import { splitTools } from './frontmatter.mjs';
 import { syncScope, formatSync, agentId } from './sync.mjs';
+import { fetchRegistry, findEntry, downloadTeam, searchRegistry } from './registry.mjs';
 import { loadConfig, setConfig, CONFIG_KEYS } from './config.mjs';
 import { loadState, saveState } from './state.mjs';
-import { readJson, exists } from './fsutil.mjs';
+import { readJson, exists, removeDir, replaceDir, tempDirIn } from './fsutil.mjs';
 import { table } from './format.mjs';
 
 export const VERSION = '0.1.0';
@@ -294,10 +296,284 @@ function sync(ctx, args) {
   return { data: { results }, text: results.map((r) => formatSync(c, r)).join('\n') };
 }
 
+// ---------------------------------------------------------------- registry
+
+function installedNames(ctx) {
+  const names = new Map();
+  for (const scope of availableScopes(ctx)) {
+    for (const name of Object.keys(loadState(scopePaths(ctx, scope)).teams)) {
+      if (!names.has(name)) names.set(name, []);
+      names.get(name).push(scope);
+    }
+  }
+  return names;
+}
+
+function registryRows(c, teams, installed) {
+  return teams.map((t) => {
+    const mark = installed.has(t.name) ? c.green('✔ installée') : '';
+    return [c.bold(t.name), c.dim('v' + t.version), t.description, c.dim((t.tags ?? []).join(', ')), mark];
+  });
+}
+
+async function listAvailable(ctx) {
+  const { c } = ctx;
+  const registry = await fetchRegistry(ctx);
+  const installed = installedNames(ctx);
+  const teams = registry.teams.map((t) => ({ ...t, installed: installed.has(t.name), installedIn: installed.get(t.name) ?? [] }));
+  const text = teams.length
+    ? [c.bold(`Teams disponibles (${teams.length})`), '', table(registryRows(c, teams, installed)), '', `${c.dim('→')} Installer : /byt install <team>`].join('\n')
+    : 'Le registry ne contient aucune team.';
+  return { data: { registry: registry.base, teams }, text };
+}
+
+async function search(ctx, args) {
+  const { c } = ctx;
+  const term = args._.join(' ').trim();
+  if (!term) throw errors.usage('byt search <mot>');
+  const registry = await fetchRegistry(ctx);
+  const installed = installedNames(ctx);
+  const results = searchRegistry(registry, term).map((t) => ({ ...t, installed: installed.has(t.name) }));
+  const text = results.length
+    ? [c.bold(`${results.length} résultat(s) pour « ${term} »`), '', table(registryRows(c, results, installed))].join('\n')
+    : `Aucune team ne correspond à « ${term} ».\n  ${c.dim('→')} Toutes les teams : /byt list --available`;
+  return { data: { term, results }, text };
+}
+
+// Télécharge une team dans un dossier temporaire et la valide avant de l'installer.
+async function stageFromRegistry(registry, entry, teamsDir) {
+  const tmp = tempDirIn(teamsDir, entry.name);
+  try {
+    await downloadTeam(registry, entry, tmp);
+    const v = validateTeam(tmp, { expectedName: entry.name });
+    if (!v.ok) {
+      const err = new BytError('TEAM_INVALID', `La team « ${entry.name} » du registry est invalide, installation annulée.`);
+      err.details = v.errors.map((e) => `  erreur  ${e}`).join('\n');
+      throw err;
+    }
+    return { tmp, team: v.team };
+  } catch (e) {
+    removeDir(tmp);
+    throw e;
+  }
+}
+
+async function install(ctx, args) {
+  const { c } = ctx;
+  const name = args._[0];
+  if (!name) throw errors.usage('byt install <team> [--project]');
+  if (!isValidName(name)) throw errors.invalidName('team', name);
+  const scope = resolveScope(ctx, args.flags, 'global');
+  const sp = scopePaths(ctx, scope);
+  const state = loadState(sp);
+  const dest = path.join(sp.teamsDir, name);
+  if ((state.teams[name] || exists(dest)) && !args.flags.force) throw errors.teamExists(name, scope);
+
+  const registry = await fetchRegistry(ctx);
+  const entry = findEntry(registry, name);
+  if (!entry) throw errors.teamNotInRegistry(name);
+  const { tmp, team } = await stageFromRegistry(registry, entry, sp.teamsDir);
+  replaceDir(tmp, dest);
+
+  state.teams[name] = { version: team.version, source: 'registry', enabled: true, installedAt: new Date().toISOString() };
+  saveState(sp, state);
+  const sync = syncScope(ctx, scope);
+  const lines = [
+    `${c.green('✔')} Team ${c.bold(name)} ${c.dim('v' + team.version)} installée (${scopeLabel(scope)}) : ${team.agents.length} agent(s).`,
+    formatSync(c, sync),
+    '',
+    `${c.dim('→')} Lancez-la : /byt run ${name} <tâche>`,
+  ];
+  return { data: { team: name, version: team.version, scope, dir: dest, sync }, text: lines.join('\n') };
+}
+
+function uninstall(ctx, args) {
+  const { c } = ctx;
+  const name = args._[0];
+  if (!name) throw errors.usage('byt uninstall <team>');
+  const found = requireInstalled(ctx, name, args.flags);
+  if (found.info.source === 'local' && !args.flags.force) {
+    throw new BytError(
+      'LOCAL_TEAM_DELETE',
+      `La team « ${name} » est locale (créée par vous) : la désinstaller la supprime définitivement.`,
+      `Confirmez avec : byt uninstall ${name} --force`
+    );
+  }
+  removeDir(found.dir);
+  delete found.state.teams[name];
+  saveState(found.sp, found.state);
+  const sync = syncScope(ctx, found.scope);
+  return {
+    data: { team: name, scope: found.scope, sync },
+    text: [`${c.green('✔')} Team ${c.bold(name)} désinstallée (${scopeLabel(found.scope)}).`, formatSync(c, sync)].join('\n'),
+  };
+}
+
+async function update(ctx, args) {
+  const { c } = ctx;
+  const name = args._[0];
+  const targets = name
+    ? [requireInstalled(ctx, name, args.flags)].map((f) => ({ name, ...f }))
+    : searchScopes(ctx, args.flags).flatMap((scope) => {
+        const sp = scopePaths(ctx, scope);
+        return Object.entries(loadState(sp).teams).map(([n, info]) => ({ name: n, scope, sp, info, dir: path.join(sp.teamsDir, n) }));
+      });
+
+  const results = [];
+  if (targets.length === 0) return { data: { results }, text: 'Aucune team installée à mettre à jour.' };
+
+  const remote = targets.some((t) => t.info.source !== 'local') ? await fetchRegistry(ctx) : null;
+  const touched = new Set();
+
+  for (const t of targets) {
+    const current = exists(path.join(t.dir, 'team.json')) ? loadTeam(t.dir) : null;
+    const from = current?.version ?? t.info.version ?? '0.0.0';
+    if (t.info.source === 'local') {
+      results.push({ team: t.name, scope: t.scope, status: 'local', version: from });
+      continue;
+    }
+    const entry = findEntry(remote, t.name);
+    if (!entry) {
+      results.push({ team: t.name, scope: t.scope, status: 'not-in-registry', version: from });
+      continue;
+    }
+    if (current && compareVersions(entry.version, from) <= 0 && !args.flags.force) {
+      results.push({ team: t.name, scope: t.scope, status: 'up-to-date', version: from });
+      continue;
+    }
+    const { tmp, team } = await stageFromRegistry(remote, entry, t.sp.teamsDir);
+    // Les choix d'activation de l'utilisateur survivent à la mise à jour.
+    const previous = new Map((current?.agents ?? []).map((a) => [a.name, a.enabled !== false]));
+    for (const a of team.agents) if (previous.has(a.name)) a.enabled = previous.get(a.name);
+    saveTeam(tmp, team);
+    replaceDir(tmp, t.dir);
+    const state = loadState(t.sp);
+    state.teams[t.name] = { ...state.teams[t.name], version: team.version, updatedAt: new Date().toISOString() };
+    saveState(t.sp, state);
+    touched.add(t.scope);
+    results.push({ team: t.name, scope: t.scope, status: 'updated', from, version: team.version });
+  }
+
+  const syncs = [...touched].map((s) => syncScope(ctx, s));
+  const label = {
+    updated: (r) => `${c.green('✔')} ${c.bold(r.team)} : ${r.from} → ${r.version}`,
+    'up-to-date': (r) => `${c.dim('=')} ${c.bold(r.team)} : déjà à jour (${r.version})`,
+    local: (r) => `${c.dim('-')} ${c.bold(r.team)} : team locale, ignorée`,
+    'not-in-registry': (r) => `${c.yellow('?')} ${c.bold(r.team)} : absente du registry, ignorée`,
+  };
+  const lines = [...results.map((r) => label[r.status](r)), ...syncs.map((s) => formatSync(c, s))];
+  return { data: { results, sync: syncs }, text: lines.join('\n') };
+}
+
+// ---------------------------------------------------------------- détail d'une team
+
+export function describeInstalled(ctx, found) {
+  const team = loadTeam(found.dir);
+  const name = team.name;
+  const agents = team.agents.map((a) => {
+    const file = readAgent(found.dir, a.name);
+    const fm = file?.frontmatter ?? {};
+    const subagent = agentId(name, a.name);
+    return {
+      name: a.name,
+      enabled: a.enabled !== false,
+      lead: a.name === team.lead,
+      description: fm.description ?? '',
+      tools: splitTools(fm.tools),
+      model: fm.model ?? 'inherit',
+      file: file?.file ?? null,
+      subagent,
+      synced: exists(path.join(found.sp.agentsDir, `${subagent}.md`)),
+    };
+  });
+  return {
+    installed: true,
+    name,
+    version: team.version,
+    description: team.description,
+    author: team.author ?? '',
+    tags: team.tags ?? [],
+    mode: team.mode ?? 'subagents',
+    lead: team.lead,
+    leadFile: agents.find((a) => a.lead)?.file ?? null,
+    scope: found.scope,
+    source: found.info.source ?? 'registry',
+    enabled: found.info.enabled !== false,
+    dir: found.dir,
+    agentsDir: found.sp.agentsDir,
+    agentTeamsEnabled: agentTeamsEnabled(ctx),
+    agents,
+  };
+}
+
+async function info(ctx, args) {
+  const { c } = ctx;
+  const name = args._[0];
+  if (!name) throw errors.usage('byt info <team>');
+  const found = findInstalled(ctx, name, args.flags);
+
+  if (!found) {
+    let entry = null;
+    try {
+      entry = findEntry(await fetchRegistry(ctx), name);
+    } catch {
+      // registry injoignable : on signale simplement que la team n'est pas installée
+    }
+    if (!entry) throw errors.teamNotInstalled(name);
+    const text = [
+      `${c.bold(entry.name)} ${c.dim('v' + entry.version)}  ${c.yellow('non installée')}`,
+      entry.description,
+      c.dim(`Auteur : ${entry.author ?? '?'} · Tags : ${(entry.tags ?? []).join(', ')} · Mode : ${entry.mode ?? 'subagents'}`),
+      `Agents : ${(entry.agents ?? []).join(', ')}`,
+      '',
+      `${c.dim('→')} Installer : /byt install ${entry.name}`,
+    ].join('\n');
+    return { data: { installed: false, ...entry }, text };
+  }
+
+  const d = describeInstalled(ctx, found);
+  const status = d.enabled ? c.green('● active') : c.yellow('○ inactive');
+  const lines = [
+    `${c.bold(d.name)} ${c.dim('v' + d.version)}  ${status}  ${c.dim(`[${scopeLabel(d.scope)}${d.source === 'local' ? ', locale' : ''}]`)}`,
+    d.description,
+    c.dim(`Auteur : ${d.author || '?'} · Tags : ${d.tags.join(', ') || '-'} · Mode : ${d.mode} · Lead : ${d.lead}`),
+    '',
+    table(
+      d.agents.map((a) => [
+        a.enabled ? c.green('✔') : c.dim('✖'),
+        c.bold(a.name) + (a.lead ? c.dim(' (lead)') : ''),
+        c.dim(a.model),
+        a.tools.join(', ') || c.yellow('tous les outils'),
+      ])
+    ),
+  ];
+  for (const a of d.agents) if (a.description) lines.push(`\n  ${c.cyan(a.name)} : ${a.description}`);
+  if (d.mode === 'agent-team' && !d.agentTeamsEnabled) {
+    lines.push('', `${c.yellow('attention')}  Mode agent-team : la fonctionnalité expérimentale n'est pas activée (CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1).`);
+  }
+  lines.push('', c.dim(`Dossier : ${d.dir}`));
+  return { data: d, text: lines.join('\n') };
+}
+
+function runCmd() {
+  throw new BytError(
+    'RUN_REQUIRES_CLAUDE',
+    'La commande run s\'exécute dans Claude Code : elle a besoin du raisonnement de Claude.',
+    'Dans Claude Code : /byt run <team> <tâche>. En terminal, « byt info <team> --json » donne la composition de la team.'
+  );
+}
+
 export const COMMANDS = {
   help,
   version,
   list,
+  'list-available': listAvailable,
+  search,
+  info,
+  install,
+  uninstall,
+  update,
+  run: runCmd,
   config,
   validate,
   enable,
