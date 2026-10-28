@@ -1,9 +1,10 @@
 import path from 'node:path';
 import { BytError, errors, scopeLabel } from './errors.mjs';
 import { availableScopes, scopePaths, searchScopes } from './context.mjs';
-import { validateTeam } from './team.mjs';
+import { validateTeam, loadTeam, saveTeam } from './team.mjs';
+import { syncScope, formatSync, agentId } from './sync.mjs';
 import { loadConfig, setConfig, CONFIG_KEYS } from './config.mjs';
-import { loadState } from './state.mjs';
+import { loadState, saveState } from './state.mjs';
 import { readJson, exists } from './fsutil.mjs';
 import { table } from './format.mjs';
 
@@ -220,10 +221,87 @@ function validate(ctx, args) {
   return { data: { ok, results }, text };
 }
 
+// ---------------------------------------------------------------- activation
+
+function setEnabled(ctx, args, enabled) {
+  const { c } = ctx;
+  const [teamName, agentName] = args._;
+  if (!teamName) throw errors.usage(`byt ${enabled ? 'enable' : 'disable'} <team> [agent]`);
+  const found = requireInstalled(ctx, teamName, args.flags);
+  const warnings = [];
+  let message;
+
+  if (agentName) {
+    const team = loadTeam(found.dir);
+    const agent = team.agents.find((a) => a.name === agentName);
+    if (!agent) throw errors.agentNotFound(teamName, agentName);
+    agent.enabled = enabled;
+    saveTeam(found.dir, team);
+    if (!enabled && agentName === team.lead) {
+      warnings.push(`« ${agentName} » est le lead : /byt run coordonnera la team sans son prompt de lead.`);
+    }
+    if (enabled && found.info.enabled === false) {
+      warnings.push(`La team « ${teamName} » est inactive : activez-la avec /byt enable ${teamName}.`);
+    }
+    message = `Agent ${c.bold(agentName)} de ${c.bold(teamName)} ${enabled ? 'activé' : 'désactivé'}.`;
+  } else {
+    found.state.teams[teamName].enabled = enabled;
+    saveState(found.sp, found.state);
+    message = `Team ${c.bold(teamName)} ${enabled ? 'activée' : 'désactivée'}.`;
+  }
+
+  const sync = syncScope(ctx, found.scope);
+  const lines = [`${c.green('✔')} ${message}`, ...warnings.map((w) => `  ${c.yellow('attention')}  ${w}`), formatSync(c, sync)];
+  return {
+    data: { team: teamName, agent: agentName ?? null, enabled, scope: found.scope, warnings, sync },
+    text: lines.join('\n'),
+  };
+}
+
+function enable(ctx, args) {
+  return setEnabled(ctx, args, true);
+}
+
+function disable(ctx, args) {
+  return setEnabled(ctx, args, false);
+}
+
+// « use » : active la team et confirme quels agents sont disponibles dans Claude Code.
+function use(ctx, args) {
+  const { c } = ctx;
+  const teamName = args._[0];
+  if (!teamName) throw errors.usage('byt use <team>');
+  const found = requireInstalled(ctx, teamName, args.flags);
+  found.state.teams[teamName].enabled = true;
+  saveState(found.sp, found.state);
+  const sync = syncScope(ctx, found.scope);
+  const team = loadTeam(found.dir);
+  const active = team.agents.filter((a) => a.enabled !== false).map((a) => ({ name: a.name, subagent: agentId(teamName, a.name) }));
+  const lines = [
+    `${c.green('✔')} Team ${c.bold(teamName)} prête : ${active.length} agent(s) actif(s).`,
+    ...active.map((a) => `  ${c.cyan(a.subagent)}`),
+    formatSync(c, sync),
+    '',
+    `${c.dim('→')} Lancez-la : /byt run ${teamName} <tâche>`,
+  ];
+  return { data: { team: teamName, scope: found.scope, agents: active, sync }, text: lines.join('\n') };
+}
+
+function sync(ctx, args) {
+  const { c } = ctx;
+  const scopes = args.flags.project || args.flags.global ? searchScopes(ctx, args.flags) : availableScopes(ctx);
+  const results = scopes.map((s) => syncScope(ctx, s));
+  return { data: { results }, text: results.map((r) => formatSync(c, r)).join('\n') };
+}
+
 export const COMMANDS = {
   help,
   version,
   list,
   config,
   validate,
+  enable,
+  disable,
+  use,
+  sync,
 };

@@ -118,3 +118,18 @@ export function writeRegistry(baseDir) {
     : [];
   fs.writeFileSync(path.join(baseDir, 'registry.json'), JSON.stringify({ schema: 1, teams }, null, 2));
 }
+
+// Installe directement une team dans une portée (sans passer par le registry).
+export function placeTeam(sb, { scope = 'global', ...opts }) {
+  const base = scope === 'project' ? path.join(sb.dirs.project, '.byt') : sb.dirs.bytHome;
+  const dir = writeTeam(base, opts);
+  const statePath = path.join(base, 'state.json');
+  const state = fs.existsSync(statePath) ? JSON.parse(fs.readFileSync(statePath, 'utf8')) : { teams: {}, synced: [] };
+  state.teams[opts.name] = { version: opts.version ?? '1.0.0', source: 'registry', enabled: true };
+  fs.writeFileSync(statePath, JSON.stringify(state));
+  return dir;
+}
+
+export function agentsIn(dir) {
+  return fs.existsSync(dir) ? fs.readdirSync(dir).sort() : [];
+}
