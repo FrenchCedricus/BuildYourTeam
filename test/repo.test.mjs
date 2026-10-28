@@ -51,3 +51,18 @@ test('installation de bout en bout depuis le registry du repo', async () => {
     sb.cleanup();
   }
 });
+
+test('SKILL.md : routeur réservé à l\'utilisateur, outils pré-autorisés limités', () => {
+  const text = fs.readFileSync(path.join(REPO_ROOT, 'skill', 'SKILL.md'), 'utf8');
+  const fm = /^---\n([\s\S]*?)\n---/.exec(text.replace(/\r\n/g, '\n'))[1];
+  assert.match(fm, /^name: byt$/m);
+  assert.match(fm, /^disable-model-invocation: true$/m);
+  const allowed = fm.split('allowed-tools:')[1].trim().split('\n').map((l) => l.replace(/^\s*-\s*/, '').trim());
+  assert.deepEqual(allowed, [
+    'Bash(node "${CLAUDE_SKILL_DIR}/byt.mjs" *)',
+    'Bash(node ${CLAUDE_SKILL_DIR}/byt.mjs *)',
+    'AskUserQuestion',
+    'Read',
+  ]);
+  for (const cmd of ['run', 'new', 'add-agent']) assert.match(text, new RegExp(`## [0-9][.] \`${cmd}`));
+});
