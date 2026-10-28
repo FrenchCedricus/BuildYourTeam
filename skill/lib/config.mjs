@@ -20,7 +20,7 @@ export function loadConfig(ctx) {
 }
 
 export function setConfig(ctx, key, value) {
-  if (!(key in KEYS)) {
+  if (!Object.hasOwn(KEYS, key)) {
     throw new BytError('UNKNOWN_CONFIG_KEY', `Clé de configuration inconnue : « ${key} ».`, `Clés disponibles : ${Object.keys(KEYS).join(', ')}`);
   }
   const stored = readJson(configPath(ctx), {});

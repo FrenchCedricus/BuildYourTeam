@@ -60,7 +60,7 @@ The system prompt.
 
 ## What the CI checks
 
-On every pull request, the CI runs `npm run validate` (strict validation of every team in `teams/`), then the test suite (`npm test`). It rejects a team that:
+On every pull request, the CI runs `npm run validate` (strict validation of every team in `teams/`), then the test suite (`npm test`) on Node 18, 20 and 22. On `main`, it regenerates `registry.json`, including a SHA-256 hash of every file. It rejects a team that:
 - has a name that is not kebab-case, or that differs from its folder;
 - has a `version` that is not semver (`1.0.0`, `1.0.0-beta.1`);
 - has no `description`, or no `author`;
@@ -69,10 +69,11 @@ On every pull request, the CI runs `npm run validate` (strict validation of ever
 - declares no agent, or the same agent twice;
 - has a file in `agents/` that is not declared in `team.json`;
 - has an agent file that is missing, has no frontmatter, has no `name` or `description`, or whose `name` differs from its file name;
+- has a frontmatter key other than `name`, `description`, `tools`, `model` and `color` (for example `permissionMode`, `hooks` or `mcpServers`), or the same key twice;
 - has an agent without `tools` (it would inherit every tool), or that lists an unknown tool. Built-in Claude Code tools, `mcp__*` tools and patterns such as `Bash(npm test)` are accepted;
 - has a `model` other than `haiku`, `sonnet`, `opus`, `inherit` or a `claude-*` model id;
 - has an agent whose prompt (the text after the frontmatter) is shorter than 40 characters;
-- has a lead with `Edit`, `Write` or `Bash` (checked by the tests).
+- has a lead with `Edit`, `Write`, `MultiEdit`, `NotebookEdit` or `Bash`, even restricted like `Bash(npm test)` (a warning in `validate`, and also checked by the tests).
 
 Warnings count as errors for the public registry: `npm run validate` fails on them too.
 
@@ -88,7 +89,9 @@ Validation messages are in French. The most common ones:
 | `agents/<agent>.md : fichier introuvable.` | Every agent listed in `team.json` needs a file `agents/<agent>.md`. |
 | `agents/<file>.md : fichier non déclaré dans team.json (ignoré).` | Add the agent to `agents` in `team.json`, or delete the file. |
 | `agents/<agent>.md : outil inconnu « … ».` | Check the spelling and case of the tool (`Read`, not `read`), and separate tools with commas. |
-| `agents/<agent>.md : pas de « tools » — l'agent hériterait de tous les outils.` | Add a `tools:` line listing only what the role needs. |
+| `agents/<agent>.md : le champ « tools » est obligatoire (sans lui, l'agent hériterait de tous les outils).` | Add a `tools:` line listing only what the role needs. |
+| `agents/<agent>.md : clé « … » non autorisée dans le frontmatter` | Remove the key: only `name`, `description`, `tools`, `model` and `color` are allowed. |
+| `lead « … » : a des droits de modification ou d'exécution` | Make the lead read-only (`Read, Grep, Glob`). |
 | `agents/<agent>.md : modèle « … » inhabituel` | Use `haiku`, `sonnet`, `opus`, `inherit` or a `claude-*` id. |
 | `agents/<agent>.md : prompt système très court.` | Write the system prompt below the frontmatter (at least 40 characters). |
 | `author : non renseigné.` | Add `"author": "<your-github-handle>"` to `team.json`. |

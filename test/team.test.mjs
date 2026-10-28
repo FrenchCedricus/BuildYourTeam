@@ -214,7 +214,10 @@ test('buildRegistry : avertissement bloquant, fichiers ignorés, lead/agents/mod
     assert.deepEqual(results.map((r) => [r.name, r.ok]), [['alpha', true], ['beta', false]]);
     assert.deepEqual(results[1].errors, []);
     assert.equal(results[1].warnings.length, 1);
-    assert.deepEqual(registry.teams, [
+    const { sha256: hashes, ...entry } = registry.teams[0];
+    assert.deepEqual(Object.keys(hashes), ['team.json', 'agents/chef.md', 'agents/worker.md']);
+    assert.ok(Object.values(hashes).every((h) => /^[0-9a-f]{64}$/.test(h)));
+    assert.deepEqual([entry], [
       {
         name: 'alpha',
         version: '1.0.0',

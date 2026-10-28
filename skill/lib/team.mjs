@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { BytError } from './errors.mjs';
+import { BytError, errors } from './errors.mjs';
 import { readJson, writeJson } from './fsutil.mjs';
 import { parseFrontmatter, splitTools } from './frontmatter.mjs';
 
@@ -13,8 +13,18 @@ export const KNOWN_TOOLS = [
   'NotebookEdit', 'TodoWrite', 'Agent', 'Task', 'Skill', 'LSP', 'AskUserQuestion',
 ];
 
+// Seules ces clés sont acceptées dans le frontmatter d'un agent : une team du registry ne doit pas
+// pouvoir déclarer permissionMode, hooks, mcpServers ou d'autres réglages qui élargissent ses droits.
+export const ALLOWED_FRONTMATTER_KEYS = ['name', 'description', 'tools', 'model', 'color'];
+const WRITE_TOOLS = ['Edit', 'Write', 'MultiEdit', 'NotebookEdit', 'Bash'];
+
 export function isValidName(name) {
   return typeof name === 'string' && name.length <= 64 && NAME_RE.test(name);
+}
+
+export function assertName(kind, name) {
+  if (!isValidName(name)) throw errors.invalidName(kind, name ?? '');
+  return name;
 }
 
 export function agentPath(teamDir, agent) {
@@ -40,7 +50,7 @@ export function readAgent(teamDir, agent) {
   if (!fs.existsSync(file)) return null;
   const text = fs.readFileSync(file, 'utf8');
   const fm = parseFrontmatter(text);
-  return { file, text, frontmatter: fm?.data ?? null, body: fm?.body ?? text };
+  return { file, text, frontmatter: fm?.data ?? null, duplicates: fm?.duplicates ?? [], body: fm?.body ?? text };
 }
 
 // Valide une team complète. Ne lève pas d'erreur : renvoie la liste des problèmes trouvés.
@@ -98,6 +108,12 @@ export function validateTeam(dir, { expectedName } = {}) {
     }
     if (!team.lead) errors.push('lead : obligatoire (nom de l\'agent qui coordonne la team).');
     else if (!seen.has(team.lead)) errors.push(`lead : l'agent « ${team.lead} » n'existe pas dans la liste des agents.`);
+    else {
+      // Le lead coordonne : s'il peut modifier ou exécuter, c'est presque toujours une erreur de conception.
+      const leadTools = splitTools(readAgent(dir, team.lead)?.frontmatter?.tools).map((t) => t.replace(/\(.*\)$/, ''));
+      const risky = leadTools.filter((t) => WRITE_TOOLS.includes(t));
+      if (risky.length) warnings.push(`lead « ${team.lead} » : a des droits de modification ou d'exécution (${risky.join(', ')}) ; un lead devrait rester en lecture seule.`);
+    }
 
     const agentsDir = path.join(dir, 'agents');
     if (fs.existsSync(agentsDir)) {
@@ -122,11 +138,17 @@ function validateAgentFile(dir, name, errors, warnings) {
     return;
   }
   const fm = agent.frontmatter;
+  for (const key of Object.keys(fm)) {
+    if (!ALLOWED_FRONTMATTER_KEYS.includes(key)) {
+      errors.push(`${rel} : clé « ${key} » non autorisée dans le frontmatter (autorisées : ${ALLOWED_FRONTMATTER_KEYS.join(', ')}).`);
+    }
+  }
+  for (const key of new Set(agent.duplicates)) errors.push(`${rel} : clé « ${key} » déclarée plusieurs fois.`);
   if (!fm.name) errors.push(`${rel} : le champ « name » est obligatoire.`);
   else if (fm.name !== name) errors.push(`${rel} : name « ${fm.name} » différent du nom de fichier « ${name} ».`);
   if (!fm.description) errors.push(`${rel} : le champ « description » est obligatoire.`);
   if (!fm.tools) {
-    warnings.push(`${rel} : pas de « tools » — l'agent hériterait de tous les outils. Restreignez-les à son rôle.`);
+    errors.push(`${rel} : le champ « tools » est obligatoire (sans lui, l'agent hériterait de tous les outils).`);
   } else {
     for (const tool of splitTools(fm.tools)) {
       const base = tool.replace(/\(.*\)$/, '');
@@ -139,11 +161,28 @@ function validateAgentFile(dir, name, errors, warnings) {
   if (agent.body.trim().length < 40) warnings.push(`${rel} : prompt système très court.`);
 }
 
+// Comparaison semver : majeur.mineur.patch, puis une pré-release (1.0.0-beta) passe avant la version finale.
 export function compareVersions(a, b) {
-  const pa = String(a).split(/[.-]/).map((x) => parseInt(x, 10) || 0);
-  const pb = String(b).split(/[.-]/).map((x) => parseInt(x, 10) || 0);
+  const split = (v) => {
+    const [core, ...pre] = String(v).split('-');
+    return { core: core.split('.').map((x) => parseInt(x, 10) || 0), pre: pre.length ? pre.join('-').split('.') : [] };
+  };
+  const va = split(a);
+  const vb = split(b);
   for (let i = 0; i < 3; i++) {
-    if ((pa[i] ?? 0) !== (pb[i] ?? 0)) return (pa[i] ?? 0) > (pb[i] ?? 0) ? 1 : -1;
+    if ((va.core[i] ?? 0) !== (vb.core[i] ?? 0)) return (va.core[i] ?? 0) > (vb.core[i] ?? 0) ? 1 : -1;
+  }
+  if (!va.pre.length || !vb.pre.length) return va.pre.length === vb.pre.length ? 0 : va.pre.length ? -1 : 1;
+  for (let i = 0; i < Math.max(va.pre.length, vb.pre.length); i++) {
+    const x = va.pre[i];
+    const y = vb.pre[i];
+    if (x === undefined || y === undefined) return x === undefined ? -1 : 1;
+    if (x === y) continue;
+    const nx = /^\d+$/.test(x);
+    const ny = /^\d+$/.test(y);
+    if (nx && ny) return Number(x) > Number(y) ? 1 : -1;
+    if (nx !== ny) return nx ? -1 : 1;
+    return x > y ? 1 : -1;
   }
   return 0;
 }

@@ -70,6 +70,8 @@ The installer copies the skill to `~/.claude/skills/byt/` (or `$CLAUDE_CONFIG_DI
 | `/byt validate [team\|folder] [--strict]` | Check a team's files (`--strict`: warnings fail too) |
 | `/byt sync` | Re-sync active agents into `.claude/agents/` |
 | `/byt config [key] [value]` | Show or change the configuration |
+| `/byt trust <team>` | Approve a team that came with the project's `.byt/` folder |
+| `/byt help [command]` | Show help for one command |
 | `/byt version` | Show the BYT version |
 
 **Options:**
@@ -118,9 +120,17 @@ Want to share yours? See [CONTRIBUTING.md](CONTRIBUTING.md).
 ## How it works
 
 - **One skill, one script.** `/byt` is a skill that hands every deterministic command to `byt.mjs`, a dependency-free Node.js script. Only `run`, `new` and `add-agent` use Claude's reasoning.
-- **Safe sync.** Only *active* agents are copied to `~/.claude/agents/` (or `.claude/agents/` in project mode), named `byt-<team>-<agent>.md`. BYT never touches agent files it did not create.
+- **Safe sync.** Only *active* agents are copied to `~/.claude/agents/` (or `.claude/agents/` in project mode), named `byt-<team>-<agent>.md`. BYT never touches agent files it did not create. Every team is validated again before its agents are synced, and BYT never writes or deletes a file outside the agents folder, even if `state.json` or `team.json` was tampered with.
 - **Two modes.** `subagents` (default): Claude acts as the lead and delegates to subagents. `agent-team`: the agents become teammates in an [agent team](https://code.claude.com/docs/en/agent-teams). This mode is experimental and needs `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1`, set in your environment or in the `env` block of `~/.claude/settings.json`, `.claude/settings.json` or `.claude/settings.local.json`.
-- **Configurable registry.** The default registry is this repository. Point BYT at your own with `node ~/.claude/skills/byt/byt.mjs config registry <url>`, where `<url>` is the folder that contains `registry.json` (an http(s) URL, a `file://` URL or a local path). The `BYT_REGISTRY` environment variable overrides it.
+- **Configurable registry.** The default registry is this repository. Point BYT at your own with `node ~/.claude/skills/byt/byt.mjs config registry <url>`, where `<url>` is the folder that contains `registry.json` (an `https://` URL, a `file://` URL or a local path). The `BYT_REGISTRY` environment variable overrides it.
+
+### Security
+
+- **Least privilege, enforced.** An agent must declare `tools`, and its frontmatter may only contain `name`, `description`, `tools`, `model` and `color`. A team that sets `permissionMode`, `hooks`, `mcpServers` or any other key is rejected.
+- **Checked downloads.** The registry is fetched over HTTPS only, without redirects, with a timeout and a 1 MiB limit per file. `registry.json` publishes a SHA-256 hash for every file, and a file that does not match is refused.
+- **Project teams must be approved.** A team found in a project's `.byt/` folder may come from a cloned repository. Until you run `/byt trust <team>`, `/byt run` shows its agents and tools and asks before running it. Approvals are stored in `~/.byt/trust.json`, outside the repository. Teams you install or create yourself are approved automatically.
+- **The lead file is data.** During `/byt run`, Claude uses the lead's prompt to coordinate, but ignores any instruction in it to change settings, install, push, fetch URLs or use extra tools.
+- **Restart after installing.** Agents installed during a session are not loaded until Claude Code restarts. Until then, their tool limits cannot be enforced, so `/byt run` asks before falling back to general-purpose agents.
 
 ### Configuration & environment
 
@@ -134,7 +144,7 @@ Want to share yours? See [CONTRIBUTING.md](CONTRIBUTING.md).
 | `NO_COLOR` | Disable colours |
 | `CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS` | Enables the `agent-team` mode |
 
-Files: `~/.byt/config.json` (configuration), `~/.byt/state.json` (global scope) and `./.byt/state.json` (project scope). A state file lists the installed teams, whether they are enabled, and the `byt-*.md` agent files BYT wrote; `sync` never touches `byt-*.md` files it did not write. Project scope is unavailable when the current folder is your home folder. Team and agent names are kebab-case, 64 characters at most.
+Files: `~/.byt/config.json` (configuration), `~/.byt/trust.json` (approved project teams), `~/.byt/state.json` (global scope) and `./.byt/state.json` (project scope). A state file lists the installed teams, whether they are enabled, and the `byt-*.md` agent files BYT wrote; `sync` never touches `byt-*.md` files it did not write. Project scope is unavailable when the current folder is your home folder. Team and agent names are kebab-case, 64 characters at most.
 
 ### Team format
 
@@ -162,7 +172,7 @@ teams/my-team/
 }
 ```
 
-Each `agents/<name>.md` file is a standard [Claude Code subagent](https://code.claude.com/docs/en/sub-agents): a frontmatter with `name`, `description`, `tools` and `model`, then the system prompt.
+Each `agents/<name>.md` file is a standard [Claude Code subagent](https://code.claude.com/docs/en/sub-agents): a frontmatter with `name`, `description`, `tools` (required) and `model` (`color` is also allowed, nothing else), then the system prompt.
 
 ## Standalone CLI
 
@@ -179,7 +189,7 @@ The CLI output and the installer messages are currently in French.
 ## Development
 
 ```bash
-npm test                  # node:test, no dependencies
+npm test                  # node:test, no dependencies (Node 18+)
 npm run validate          # validate every team in teams/
 npm run build:registry    # regenerate registry.json (maintainers only; CI does it on every push to main)
 ```

@@ -16,7 +16,7 @@
     "node": ">=18"
   },
   "scripts": {
-    "test": "node --test \"test/**/*.test.mjs\"",
+    "test": "node scripts/test.mjs",
     "validate": "node scripts/build-registry.mjs --validate-only",
     "build:registry": "node scripts/build-registry.mjs"
   },

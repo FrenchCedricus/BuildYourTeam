@@ -3,7 +3,7 @@ import { createColors } from './format.mjs';
 import { BytError, errors } from './errors.mjs';
 import { COMMANDS } from './commands.mjs';
 
-const BOOLEAN_FLAGS = new Set(['json', 'project', 'global', 'available', 'force', 'strict', 'help', 'version', 'all']);
+const BOOLEAN_FLAGS = new Set(['json', 'project', 'global', 'available', 'force', 'strict', 'help', 'version']);
 
 export function parseArgs(argv) {
   const positionals = [];

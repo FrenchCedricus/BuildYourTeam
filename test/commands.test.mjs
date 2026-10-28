@@ -123,12 +123,11 @@ test('validate : sans team, team installée par nom, --strict sur avertissement,
     assert.deepEqual(ok.json.data.results.map((r) => [r.label, r.ok]), [['dev', true]]);
     assert.equal(ok.json.data.results[0].dir, dir);
 
-    // agent sans « tools » : simple avertissement, bloquant seulement en --strict
-    const noTools = agentMd({ name: 'worker' }).replace(/^tools: .*\n/m, '');
-    fs.writeFileSync(path.join(dir, 'agents', 'worker.md'), noTools);
+    // outil inconnu : simple avertissement, bloquant seulement en --strict
+    fs.writeFileSync(path.join(dir, 'agents', 'worker.md'), agentMd({ name: 'worker', tools: 'Read, Foo' }));
     const lax = await sb.bytJson('validate', 'dev');
     assert.equal(lax.json.ok, true);
-    assert.match(lax.json.data.results[0].warnings.join('\n'), /pas de « tools »/);
+    assert.match(lax.json.data.results[0].warnings.join('\n'), /outil inconnu « Foo »/);
 
     const strict = await sb.bytJson('validate', 'dev', '--strict');
     assert.equal(strict.code, 1);

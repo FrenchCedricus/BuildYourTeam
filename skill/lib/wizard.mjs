@@ -6,7 +6,7 @@ import { ACCESS_LEVELS, MODEL_CHOICES, PROJECT_TYPES, defaultsFor, isLeadName, a
 import { splitTools } from './frontmatter.mjs';
 
 // Lecteur de lignes basé sur une file : fonctionne en TTY comme avec une entrée pipée (tests).
-export function createPrompter(input, output) {
+export function createPrompter(input, output, abortHint = 'En mode non interactif, fournissez les données : byt new --data \'<json>\'') {
   const rl = readline.createInterface({ input, terminal: false });
   const queue = [];
   const waiters = [];
@@ -35,7 +35,7 @@ export function createPrompter(input, output) {
         throw new BytError(
           'WIZARD_ABORTED',
           'Assistant interrompu (fin de saisie).',
-          'En mode non interactif, fournissez les données : byt new --data \'<json>\''
+          abortHint
         );
       }
       return line.trim();

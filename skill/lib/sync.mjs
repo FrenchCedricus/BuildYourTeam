@@ -2,9 +2,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { scopePaths } from './context.mjs';
 import { loadState, saveState } from './state.mjs';
-import { loadTeam, agentPath } from './team.mjs';
+import { agentPath, isValidName, validateTeam } from './team.mjs';
 import { setFrontmatterField } from './frontmatter.mjs';
-import { writeText } from './fsutil.mjs';
+import { writeText, assertInside } from './fsutil.mjs';
 
 export const PREFIX = 'byt-';
 
@@ -20,26 +20,39 @@ export function agentFileName(team, agent) {
 // et retire les fichiers BYT devenus inutiles. Seuls les fichiers byt-*.md
 // que BYT a lui-même écrits (listés dans state.synced) peuvent être supprimés
 // ou écrasés : les autres agents de l'utilisateur ne sont jamais touchés.
+//
+// state.json et team.json sont relus sur le disque et peuvent venir d'un dépôt cloné :
+// noms, chemins et contenu sont revérifiés ici avant toute écriture ou suppression.
+export const SYNCED_FILE_RE = /^byt-[a-z0-9]+(?:-[a-z0-9]+)*\.md$/;
+
 export function syncScope(ctx, scope) {
   const sp = scopePaths(ctx, scope);
   const state = loadState(sp);
-  const tracked = new Set(state.synced.filter((f) => f.startsWith(PREFIX) && f.endsWith('.md')));
+  const synced0 = Array.isArray(state.synced) ? state.synced : [];
+  const tracked = new Set(synced0.filter((f) => typeof f === 'string' && SYNCED_FILE_RE.test(f)));
   const desired = new Map();
   const warnings = [];
 
-  for (const [teamName, info] of Object.entries(state.teams)) {
-    if (info.enabled === false) continue;
+  for (const [teamName, info] of Object.entries(state.teams ?? {})) {
+    if (info?.enabled === false) continue;
+    if (!isValidName(teamName)) {
+      warnings.push(`state.json : nom de team invalide « ${teamName} », ignoré.`);
+      continue;
+    }
     const dir = path.join(sp.teamsDir, teamName);
-    let team;
-    try {
-      team = loadTeam(dir);
-    } catch {
+    if (!fs.existsSync(path.join(dir, 'team.json'))) {
       warnings.push(`Team « ${teamName} » : team.json introuvable, agents non synchronisés.`);
       continue;
     }
-    for (const a of team.agents ?? []) {
+    const v = validateTeam(dir, { expectedName: teamName });
+    if (!v.ok) {
+      warnings.push(`Team « ${teamName} » invalide, agents non synchronisés : ${v.errors[0]}`);
+      continue;
+    }
+    const team = v.team;
+    for (const a of team.agents) {
       if (a.enabled === false) continue;
-      const src = agentPath(dir, a.name);
+      const src = assertInside(dir, agentPath(dir, a.name));
       if (!fs.existsSync(src)) {
         warnings.push(`Team « ${teamName} » : agents/${a.name}.md introuvable.`);
         continue;
@@ -62,7 +75,7 @@ export function syncScope(ctx, scope) {
   const synced = [];
 
   for (const [file, { content }] of desired) {
-    const dest = path.join(sp.agentsDir, file);
+    const dest = assertInside(sp.agentsDir, path.join(sp.agentsDir, file));
     if (fs.existsSync(dest) && !tracked.has(file)) {
       skipped.push(file);
       warnings.push(`${file} existe déjà dans ${sp.agentsDir} sans avoir été créé par BYT : fichier laissé intact.`);
@@ -79,8 +92,8 @@ export function syncScope(ctx, scope) {
 
   for (const file of tracked) {
     if (synced.includes(file)) continue;
-    const dest = path.join(sp.agentsDir, file);
-    if (fs.existsSync(dest)) {
+    const dest = assertInside(sp.agentsDir, path.join(sp.agentsDir, file));
+    if (fs.lstatSync(dest, { throwIfNoEntry: false })?.isFile()) {
       fs.rmSync(dest);
       removed.push(file);
     }

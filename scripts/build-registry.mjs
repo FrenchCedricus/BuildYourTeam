@@ -7,6 +7,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { validateTeam, teamFiles } from '../skill/lib/team.mjs';
+import { sha256 } from '../skill/lib/registry.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const args = new Set(process.argv.slice(2));
@@ -27,6 +28,7 @@ export function buildRegistry(teamsRoot) {
     results.push({ name, ok, errors: r.errors, warnings: r.warnings });
     if (ok) {
       const t = r.team;
+      const files = teamFiles(t);
       teams.push({
         name: t.name,
         version: t.version,
@@ -37,7 +39,9 @@ export function buildRegistry(teamsRoot) {
         lead: t.lead,
         agents: t.agents.map((a) => a.name),
         path: `teams/${name}`,
-        files: teamFiles(t),
+        files,
+        // Vérifié par byt install / update : un fichier différent de celui publié est refusé.
+        sha256: Object.fromEntries(files.map((f) => [f, sha256(fs.readFileSync(path.join(dir, ...f.split('/')), 'utf8'))])),
       });
     }
   }

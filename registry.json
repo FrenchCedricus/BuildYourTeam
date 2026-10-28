@@ -30,7 +30,15 @@
         "agents/critic.md",
         "agents/pragmatist.md",
         "agents/synthesizer.md"
-      ]
+      ],
+      "sha256": {
+        "team.json": "4b442f1be5da0c0779f3dc9f0adfafce8f0377703f773c7684e437ab43bdbbab",
+        "agents/facilitator.md": "3f14d6c130820582e13388c9ec8d247ca004e6fa9525a5e09b5365b81e6ac3f6",
+        "agents/visionary.md": "ad1e4270df6ef6d7373ebb9ccfad4d0a0c5cb83db7672a0e5191bbffece3d30a",
+        "agents/critic.md": "adc76f0c5638e3eceddc42118253da4ccdf91fae9ea15d8befd339fc06a24d32",
+        "agents/pragmatist.md": "4a843ee7f00109a695743a190e1609cfefb0192ddf25b16a17c8ae81f6ccb86c",
+        "agents/synthesizer.md": "df2fec6575cd9bb2ca9bdaa77b39bc72d2bbc5c8d380787efaf9ecc52a9254da"
+      }
     },
     {
       "name": "content-marketing",
@@ -61,7 +69,15 @@
         "agents/writer.md",
         "agents/seo-specialist.md",
         "agents/copy-editor.md"
-      ]
+      ],
+      "sha256": {
+        "team.json": "6a0821d769eef10f4288235165131d36edd915f371be0e37b17bc6adcb6e947b",
+        "agents/lead.md": "9b822540b19665d452e8836b50a0962c587bc142a0047cb587f399498171c69e",
+        "agents/researcher.md": "b8c79f5f16968cc95c6e0aa76ca3b095b9dfd091f494bb56df08f40ab1ab275b",
+        "agents/writer.md": "da7b534f25079b747cd2196595b672a8dbe601350067ccedbe2d858c2842a665",
+        "agents/seo-specialist.md": "1818fdec4ba65e3da401255582f614d9c826df76c11ffb6f820dc44318dd50f8",
+        "agents/copy-editor.md": "f79cee9570f78edf9f0a8deecaca21b77548e2050b9e79a82e4cf27bdebccb9c"
+      }
     },
     {
       "name": "data-science",
@@ -92,7 +108,15 @@
         "agents/data-analyst.md",
         "agents/ml-engineer.md",
         "agents/stats-reviewer.md"
-      ]
+      ],
+      "sha256": {
+        "team.json": "d647a38d464504c44752e5c13a32d4516fb11407c0237fbfcac55357648bd9a8",
+        "agents/lead.md": "2ac0a7431c0667ae21f3bd252f8999824d5f6946dfe3384a0e0b686fc0a8ace6",
+        "agents/data-engineer.md": "64c07247afc58e41fdf8ca95a5cd52437461cc11319d264faa69e7ee23b43c34",
+        "agents/data-analyst.md": "d3c37638645b3a8e88072ca448d5a1db4a4554c4b355055d6ee704855e24abb5",
+        "agents/ml-engineer.md": "7e9ab9f078b63bbb027459a6837f79f998283b8d37c873edaa3da53d8f67cec3",
+        "agents/stats-reviewer.md": "db5c33d64b8d4399939f5c66ffce3b2b284fe4bafbc5c37dfef3df9014e24d66"
+      }
     },
     {
       "name": "devops",
@@ -124,7 +148,15 @@
         "agents/infra-engineer.md",
         "agents/reliability-engineer.md",
         "agents/config-auditor.md"
-      ]
+      ],
+      "sha256": {
+        "team.json": "142428a63b9fcb050a7e4c7f08041e5a61a213429982d54eac7703e657f12a92",
+        "agents/lead.md": "41d677f2910a99df79feab1e69b7915dc38219356c22e4dc27f8066d1b12823f",
+        "agents/ci-engineer.md": "e769297ce1cf34eeaa4d6d70cbacd5f32220c97143c1091c1b1471a762ba5d3e",
+        "agents/infra-engineer.md": "71cf89e8e1a421f695df18c055bcba50bc7d77883acb70962c22446f03572c7b",
+        "agents/reliability-engineer.md": "4932fac458fa55cb77b7d757ee8206a51ac2bebd1a878c4115686c7e9e065a1d",
+        "agents/config-auditor.md": "dd3131a05f6fdf884fb631a8f3b52d6601d3b06d105f3bde3766a179a14b3f14"
+      }
     },
     {
       "name": "documentation",
@@ -155,7 +187,15 @@
         "agents/api-documenter.md",
         "agents/tutorial-writer.md",
         "agents/doc-reviewer.md"
-      ]
+      ],
+      "sha256": {
+        "team.json": "5bdbe091d516e333dc0a32b73eedad972a84b3c799278b90964ed9036061b24e",
+        "agents/lead.md": "3dedd5e0333d7d19ab8e984f28a5d2f2a17ac1709ce851f96a0de8dfb0bf762e",
+        "agents/doc-architect.md": "56370113c52b5bd6c16ef4396d44ee9d44ff34fad45fb13159340a35b5ef1746",
+        "agents/api-documenter.md": "f3c85506b9caa0c71c36d8c4e33038cda222a8a3a8ed31a2c7347c8d4fdf06da",
+        "agents/tutorial-writer.md": "62a12056cf7b5b2897e6e730e90c9dbb151031597c13fb0b83b229cd95f350ee",
+        "agents/doc-reviewer.md": "6eafd958d60e4def6b61e0adc2bd52b95e04098db0dd858786c01f2e571aa989"
+      }
     },
     {
       "name": "game-dev",
@@ -186,7 +226,15 @@
         "agents/gameplay-dev.md",
         "agents/level-designer.md",
         "agents/playtester.md"
-      ]
+      ],
+      "sha256": {
+        "team.json": "69a5b74f90aae347b6ffc9be37a7d4b9c19b28b50ee8a616b80fd67569e8e308",
+        "agents/lead.md": "1cada0189d4b1b98506f109b7aecc0c9edbc2bddef26d0935849c3faa4b950f5",
+        "agents/game-designer.md": "d42b5074fd38d011ba37bfd7e36529b5f5d81cead5ba331209193bf4931911d4",
+        "agents/gameplay-dev.md": "598eb27331fcbc355db2f6b5729845a7b4b2714dab2923c7db9e77a41c721a65",
+        "agents/level-designer.md": "74364cece866aeeae5c28941789dfd6acc76151ff909d811e9b8d02e4c8110b5",
+        "agents/playtester.md": "b1acd4a852142e69e434991526f5adc6a43948e2219cce0df32f1ba7cb364bbd"
+      }
     },
     {
       "name": "legacy-modernization",
@@ -217,7 +265,15 @@
         "agents/test-guardian.md",
         "agents/refactorer.md",
         "agents/migration-reviewer.md"
-      ]
+      ],
+      "sha256": {
+        "team.json": "9f9e31ba331c559423cc2eb527346225a549f04d36f15a1ac2f8b5a022bfec10",
+        "agents/lead.md": "3580dfc325e73f0566ecae934b74bedf9cc517811aff16c9f6838eeb27733100",
+        "agents/code-archaeologist.md": "36efd4c52b813e4ce0f1561674bcb1c8129a75794a6af524005097fb836eaf0d",
+        "agents/test-guardian.md": "7a54bb448a3dcc92fa62ed57406e8c1d6d7be3296cee492a6ce83cc8e6c24de4",
+        "agents/refactorer.md": "e40e9bed85be0f592da37eff4ca926e1d107cd6e66eee75f7569f1eb60dc656f",
+        "agents/migration-reviewer.md": "b4ffd739f7199a2ac5324c58b313998634e587011953caf53d0081b3150caa9f"
+      }
     },
     {
       "name": "mobile-app",
@@ -248,7 +304,15 @@
         "agents/mobile-dev.md",
         "agents/api-integrator.md",
         "agents/mobile-tester.md"
-      ]
+      ],
+      "sha256": {
+        "team.json": "baf26e5def3daa22687b66a6dc1eab95cde72590e69ab35380747a965bbc34ca",
+        "agents/lead.md": "ecbeb9eb5dccb65e481f2745ae30f118734e84cb522db677bbc926079edd5aca",
+        "agents/ux-designer.md": "9b3b78b303d8d154237b8e375bca861eabc11e4452d275bd42a64a655c7400f0",
+        "agents/mobile-dev.md": "d57c667fd769d1ae8562ea1ffc56519ce5625e3732114e2609ee4569feebba15",
+        "agents/api-integrator.md": "5722988a66452404a9fd109180c119081e4714445b52ff6749289d749ae3bcf4",
+        "agents/mobile-tester.md": "ff6f8adfcc5ffff875e2803ce6a55169089b64ed247d8be36ad34bb2b329dc03"
+      }
     },
     {
       "name": "product-management",
@@ -279,7 +343,15 @@
         "agents/product-analyst.md",
         "agents/spec-writer.md",
         "agents/roadmap-planner.md"
-      ]
+      ],
+      "sha256": {
+        "team.json": "b3068f8fb80eb5d7da665552604cda64327be25baf05ae0574c5c9c6604b1a0f",
+        "agents/lead.md": "58db72282373651996d30b1ac2a592d9655f1a3489565d2122bbb7d7c09c3712",
+        "agents/user-researcher.md": "e9dbacd0bfe2f199fbc35d2fd09131d69355fdc0be60a2e46bddccaec2e98bb2",
+        "agents/product-analyst.md": "9762f3f53e8fd937b800081bac3e72157f5dcfb9492e97ac6bf96e4459aaf508",
+        "agents/spec-writer.md": "e1692b10e933ce979eef40f05251e660835437debb843c45c40a7e8c79850242",
+        "agents/roadmap-planner.md": "5abff1bd563d8f976dec58c3b7b310d2bf76eaaa38bbe9db2261344795683e54"
+      }
     },
     {
       "name": "research",
@@ -310,7 +382,15 @@
         "agents/analyst.md",
         "agents/fact-checker.md",
         "agents/report-writer.md"
-      ]
+      ],
+      "sha256": {
+        "team.json": "6b2586251b834017e01f83067f20c74f0f07314184f1deaaddddbef09fea6faf",
+        "agents/lead.md": "d7ba22ab11128d8a6160d7c362bf3f872e322daeca2a6c08d65908c49a2a2a00",
+        "agents/scout.md": "b1f447f67aa579a664258f98f84e9205c93df8c74fc67717c1d165c2604f2547",
+        "agents/analyst.md": "817f011e1182959b00ed310e865bbbc2f6b2a31c220859fa149ac21d7abfe9c4",
+        "agents/fact-checker.md": "d6dc03ee7a15e788fbc704d8986586185d0d0a10354760b1cb9480ce9d0a0595",
+        "agents/report-writer.md": "5eb15d1c97b01a8875c66a62f3c9d3df4bf23face10e24eafeaa21dc01fc288a"
+      }
     },
     {
       "name": "security-audit",
@@ -341,7 +421,15 @@
         "agents/code-auditor.md",
         "agents/dependency-auditor.md",
         "agents/remediation-advisor.md"
-      ]
+      ],
+      "sha256": {
+        "team.json": "b6b5b58471457dd4db02752bdcd3737a1fbe0a647b7a99d47767c7700961adf0",
+        "agents/lead.md": "9f021475317e69617c05cc442bfce16cee0a48249531ec277e67d55c6a549efa",
+        "agents/threat-modeler.md": "b175023900b1980a7141a04d55b181c918ccb3991b8a2fbf3c6531bec92e491c",
+        "agents/code-auditor.md": "90c3260ecc6dab794e39151fd3df065cbc3fcf8e802c958d49e4c765db1bbe69",
+        "agents/dependency-auditor.md": "b68a42c819a20a2bc0e18fd66bdeb502d077f533d5eb43736932563b1aff21ec",
+        "agents/remediation-advisor.md": "66844e15bec143ba23e7298c50fd2f638ba67a56abb78e8296b9fa351bf49b14"
+      }
     },
     {
       "name": "software-dev",
@@ -374,7 +462,16 @@
         "agents/frontend.md",
         "agents/reviewer.md",
         "agents/docs.md"
-      ]
+      ],
+      "sha256": {
+        "team.json": "b8e46291bc76b5e551b7ae16d9425fdbd1c59f7292461dcff0a74530bd4b40c4",
+        "agents/lead.md": "705575ed146a50d6837235d68eec7b3d99ffd523b84d439f4ef8896d3d7ef788",
+        "agents/architect.md": "8c6b28359d322a3d5631dbf21e89d22c2b8151a0ec88a11a95baba87bddaf790",
+        "agents/backend.md": "5bcaa902e8b1efc1eb919a63803606b27555d70ec52114b44334467b1000414e",
+        "agents/frontend.md": "6a79beacb7ce710920a7877eab197b06f0cbd14daa666e38927feb15ecbb8dd5",
+        "agents/reviewer.md": "98fd9e47452da69ffd4059e8b48a81b707755208cbcba62e411cbf88e7ec6c51",
+        "agents/docs.md": "b84af0ab8c08e10538ba20d3840ecd279420b0734b33becb4c4a5c74a534d150"
+      }
     },
     {
       "name": "testing",
@@ -405,7 +502,15 @@
         "agents/unit-tester.md",
         "agents/e2e-tester.md",
         "agents/bug-hunter.md"
-      ]
+      ],
+      "sha256": {
+        "team.json": "06c46506407e54e96092389ad4b9a6147c0854891edf11de0529b28a0790444e",
+        "agents/lead.md": "84d58ae2c03f7d750d73f74ba310752d7c11ec4558a0392267361caf831cb421",
+        "agents/test-planner.md": "fcc720f20c6129a56f0d19eb84c386c5cc3c5c47f21669afc35c9d76240ca98b",
+        "agents/unit-tester.md": "d7750430e348eedc9ff966cfe562aa364b2820d4994b2fd1cfb850c4aca52ebc",
+        "agents/e2e-tester.md": "332c54ef54bccf6846e5c43328c5f0d5f61ca7d45660d2b199930eaec189efab",
+        "agents/bug-hunter.md": "21b65e38750c158fe1c1ceec98e8a6df05458534d90642a65f5b922941701a06"
+      }
     },
     {
       "name": "translation",
@@ -438,7 +543,16 @@
         "agents/localization-engineer.md",
         "agents/cultural-reviewer.md",
         "agents/linguistic-qa.md"
-      ]
+      ],
+      "sha256": {
+        "team.json": "93f0f2026f22aa5c871f012ffb452f95646d8c64b4d994dbefdce5a2ae7edb1e",
+        "agents/lead.md": "bed4d5f4a726a7ffc29cabacd14c6226b3436fea59cb8f4e23be3cae10d5e8a3",
+        "agents/terminologist.md": "ba28fc32852dc3b85f16dad5a9e84b675c40aad4861442ab7b65d3181de50540",
+        "agents/translator.md": "d475da4d07164ab9bd2e4a0b10117091a5c2b4a225d3ba06b07a8f9fba6eff58",
+        "agents/localization-engineer.md": "937b9e96bd4ff809388710da72567d2d59b7480e54ae766f2df85840f52e4834",
+        "agents/cultural-reviewer.md": "c2f096e053c56c6d15efdc61fea4baaed3db68bc5f67e3f22b62062ba9f2b9bc",
+        "agents/linguistic-qa.md": "81a1606a24f6db331314f946b58fef3015f897e100c510a6c432c2b1f333d522"
+      }
     },
     {
       "name": "ux-design",
@@ -469,7 +583,15 @@
         "agents/interaction-designer.md",
         "agents/ui-engineer.md",
         "agents/accessibility-reviewer.md"
-      ]
+      ],
+      "sha256": {
+        "team.json": "64d5f383a4f75b9895a716cfe16c67194d4cb16b6045724a0bf3adf62013fb1b",
+        "agents/lead.md": "d1cd70a71bdd038b8b4fce6cd38c8af55b7b747eedbf1304743ec36131831c6e",
+        "agents/ux-auditor.md": "d93b123a0b9c731bbb522fd25e188a7d87b43258c62553d5fbbe93a1ef32d54f",
+        "agents/interaction-designer.md": "b404845272d8da18c7e8f35baf47ccf391ab1ce742639a0d76cbb4d59c3d40f7",
+        "agents/ui-engineer.md": "5589148c14c20b60a35ca5b0142c690c9454b2a8bfe50a038a2e1784d56b4b44",
+        "agents/accessibility-reviewer.md": "e2c6a4092f052997383ca07a2ca0082d8967d13dc99c4046550e4d6ff2cc393a"
+      }
     }
   ]
 }

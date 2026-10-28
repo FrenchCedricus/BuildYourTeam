@@ -156,10 +156,22 @@ test('list --available, search et info', async () => {
 test('registry injoignable : message clair', async () => {
   const sb = sandbox();
   try {
-    sb.env.BYT_REGISTRY = 'http://127.0.0.1:9';
+    sb.env.BYT_REGISTRY = 'https://127.0.0.1:9';
     const r = await sb.byt('list', '--available');
     assert.equal(r.code, 1);
     assert.match(r.stderr, /Impossible de joindre le registry/);
+  } finally {
+    sb.cleanup();
+  }
+});
+
+test('registry en http:// refusé (REGISTRY_INSECURE)', async () => {
+  const sb = sandbox();
+  try {
+    sb.env.BYT_REGISTRY = 'http://127.0.0.1:9';
+    const r = await sb.bytJson('list', '--available');
+    assert.equal(r.code, 1);
+    assert.equal(r.json.error.code, 'REGISTRY_INSECURE');
   } finally {
     sb.cleanup();
   }

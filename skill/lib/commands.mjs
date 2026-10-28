@@ -1,7 +1,8 @@
 import path from 'node:path';
 import { BytError, errors, scopeLabel } from './errors.mjs';
 import { availableScopes, scopePaths, searchScopes, resolveScope, agentTeamsEnabled } from './context.mjs';
-import { validateTeam, loadTeam, saveTeam, readAgent, isValidName, compareVersions } from './team.mjs';
+import { validateTeam, loadTeam, saveTeam, readAgent, isValidName, assertName, compareVersions } from './team.mjs';
+import { isTrusted, trustTeam } from './trust.mjs';
 import { splitTools } from './frontmatter.mjs';
 import { syncScope, formatSync, agentId } from './sync.mjs';
 import { fetchRegistry, findEntry, downloadTeam, searchRegistry } from './registry.mjs';
@@ -35,6 +36,7 @@ const HELP = [
   ['validate [team|dossier]', 'Vérifie une team (--strict : avertissements bloquants)'],
   ['sync', 'Resynchronise les agents dans .claude/agents'],
   ['config [clé] [valeur]', 'Affiche ou modifie la configuration'],
+  ['trust <team>', 'Approuve une team livrée dans le dossier .byt du projet'],
 ];
 
 const OPTIONS = [
@@ -46,8 +48,19 @@ const OPTIONS = [
   ['--force', 'Remplace une team existante (install, new, update)'],
 ];
 
-function help(ctx) {
+function help(ctx, args = { _: [] }) {
   const { c } = ctx;
+  const topic = args._[0];
+  if (topic) {
+    // « help install » : seulement les lignes de cette commande, puis les options.
+    const rows = HELP.filter(([usage]) => usage.split(' ')[0] === topic);
+    if (rows.length) {
+      return {
+        text: [`${c.bold('BuildYourTeam')} ${c.dim('v' + VERSION)} — aide de « ${topic} »`, '', table(rows.map(([cmd, desc]) => [c.cyan(cmd), desc])), '', c.bold('Options'), table(OPTIONS.map(([opt, desc]) => [c.cyan(opt), desc]))].join('\n'),
+        data: { version: VERSION, commands: rows.map(([usage, description]) => ({ usage, description })), options: OPTIONS.map(([option, description]) => ({ option, description })) },
+      };
+    }
+  }
   const text = [
     `${c.bold('BuildYourTeam')} ${c.dim('v' + VERSION)} — des teams de subagents Claude Code`,
     '',
@@ -148,7 +161,7 @@ function config(ctx, args) {
   }
   const cfg = loadConfig(ctx);
   if (key) {
-    if (!(key in CONFIG_KEYS)) throw errors.usage('config [registry] [valeur]');
+    if (!Object.hasOwn(CONFIG_KEYS, key)) throw errors.usage('config [registry] [valeur]');
     return { data: { [key]: cfg[key] }, text: String(cfg[key]) };
   }
   const rows = Object.keys(CONFIG_KEYS).map((k) => [c.cyan(k), cfg[k], c.dim(CONFIG_KEYS[k])]);
@@ -162,11 +175,12 @@ function config(ctx, args) {
 
 // Cherche la team dans les portées autorisées (projet d'abord, puis global).
 export function findInstalled(ctx, name, flags = {}) {
+  if (!isValidName(name)) return null;
   for (const scope of searchScopes(ctx, flags)) {
     const sp = scopePaths(ctx, scope);
     const state = loadState(sp);
     const dir = path.join(sp.teamsDir, name);
-    if (state.teams[name] && exists(path.join(dir, 'team.json'))) {
+    if (Object.hasOwn(state.teams, name) && exists(path.join(dir, 'team.json'))) {
       return { scope, sp, state, dir, info: state.teams[name] };
     }
   }
@@ -369,7 +383,7 @@ async function install(ctx, args) {
   const sp = scopePaths(ctx, scope);
   const state = loadState(sp);
   const dest = path.join(sp.teamsDir, name);
-  if ((state.teams[name] || exists(dest)) && !args.flags.force) throw errors.teamExists(name, scope);
+  if ((Object.hasOwn(state.teams, name) || exists(dest)) && !args.flags.force) throw errors.teamExists(name, scope);
 
   const registry = await fetchRegistry(ctx);
   const entry = findEntry(registry, name);
@@ -379,6 +393,7 @@ async function install(ctx, args) {
 
   state.teams[name] = { version: team.version, source: 'registry', enabled: true, installedAt: new Date().toISOString() };
   saveState(sp, state);
+  if (scope === 'project') trustTeam(ctx, dest);
   const sync = syncScope(ctx, scope);
   const lines = [
     `${c.green('✔')} Team ${c.bold(name)} ${c.dim('v' + team.version)} installée (${scopeLabel(scope)}) : ${team.agents.length} agent(s).`,
@@ -501,6 +516,10 @@ export function describeInstalled(ctx, found) {
     scope: found.scope,
     source: found.info.source ?? 'registry',
     enabled: found.info.enabled !== false,
+    // Une team du dossier .byt du projet peut venir d'un dépôt cloné : elle doit être approuvée (byt trust).
+    trusted: isTrusted(ctx, found.scope, found.dir),
+    // Une team de projet du même nom qu'une team globale la masque.
+    shadowsGlobal: found.scope === 'project' && Boolean(findInstalled(ctx, name, { global: true })),
     dir: found.dir,
     agentsDir: found.sp.agentsDir,
     agentTeamsEnabled: agentTeamsEnabled(ctx),
@@ -550,6 +569,12 @@ async function info(ctx, args) {
     ),
   ];
   for (const a of d.agents) if (a.description) lines.push(`\n  ${c.cyan(a.name)} : ${a.description}`);
+  if (!d.trusted) {
+    lines.push('', `${c.yellow('attention')}  Team du projet non approuvée : elle vient du dossier .byt de ce projet, pas de vous. Relisez ses agents, puis : byt trust ${d.name}`);
+  }
+  if (d.shadowsGlobal) {
+    lines.push('', `${c.yellow('attention')}  Cette team du projet masque votre team globale « ${d.name} ».`);
+  }
   if (d.mode === 'agent-team' && !d.agentTeamsEnabled) {
     lines.push('', `${c.yellow('attention')}  Mode agent-team : la fonctionnalité expérimentale n'est pas activée (CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS=1).`);
   }
@@ -635,12 +660,14 @@ async function newTeam(ctx, args) {
   const cache = new Map();
   let data;
   let fromName = args.flags.from;
+  if (fromName !== undefined) assertName('team', fromName);
 
   try {
     if (args.flags.data !== undefined) {
       data = await readData(ctx, args);
       if (args._[0]) data.name = args._[0];
       fromName = fromName ?? data.from;
+      if (fromName !== undefined) assertName('team', fromName);
     } else {
       requireInteractive(ctx, args, usage);
       const prompter = createPrompter(ctx.io.stdin, ctx.io.stdout);
@@ -703,7 +730,7 @@ async function addAgentCmd(ctx, args) {
   const found = requireInstalled(ctx, teamName, args.flags);
   if (!spec) {
     requireInteractive(ctx, args, usage);
-    const prompter = createPrompter(ctx.io.stdin, ctx.io.stdout);
+    const prompter = createPrompter(ctx.io.stdin, ctx.io.stdout, `En mode non interactif, fournissez les données : ${usage}`);
     try {
       spec = await runAddAgentWizard({ prompter, c, team: teamName });
     } finally {
@@ -736,6 +763,24 @@ function removeAgentCmd(ctx, args) {
   };
 }
 
+function trust(ctx, args) {
+  const { c } = ctx;
+  const name = args._[0];
+  if (!name) throw errors.usage('byt trust <team>');
+  const found = requireInstalled(ctx, name, args.flags);
+  if (found.scope !== 'project') {
+    return { data: { team: name, scope: found.scope, trusted: true }, text: `${c.dim('=')} Team ${c.bold(name)} globale : déjà approuvée.` };
+  }
+  const v = validateTeam(found.dir, { expectedName: name });
+  if (!v.ok) {
+    const err = new BytError('TEAM_INVALID', `La team « ${name} » est invalide : elle ne peut pas être approuvée.`);
+    err.details = v.errors.map((e) => `  erreur  ${e}`).join('\n');
+    throw err;
+  }
+  trustTeam(ctx, found.dir);
+  return { data: { team: name, scope: found.scope, dir: found.dir, trusted: true }, text: `${c.green('✔')} Team ${c.bold(name)} du projet approuvée.` };
+}
+
 function runCmd() {
   throw new BytError(
     'RUN_REQUIRES_CLAUDE',
@@ -764,4 +809,5 @@ export const COMMANDS = {
   disable,
   use,
   sync,
+  trust,
 };

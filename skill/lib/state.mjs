@@ -6,8 +6,11 @@ import { readJson, writeJson } from './fsutil.mjs';
 //   "synced": ["byt-<team>-<agent>.md", ...]   // fichiers écrits par BYT dans .claude/agents
 // }
 export function loadState(sp) {
-  const state = readJson(sp.statePath, {});
-  return { teams: {}, synced: [], ...state };
+  const raw = readJson(sp.statePath, {});
+  const state = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {};
+  // Objet sans prototype : une team nommée « constructor » ou « toString » ne doit pas sembler installée.
+  const teams = Object.assign(Object.create(null), state.teams && typeof state.teams === 'object' ? state.teams : {});
+  return { ...state, teams, synced: Array.isArray(state.synced) ? state.synced : [] };
 }
 
 export function saveState(sp, state) {

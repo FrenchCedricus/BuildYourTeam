@@ -30,7 +30,7 @@ test('sync : conflit de nom entre teams (dev/api-lead vs dev-api/lead) → avert
   }
 });
 
-test('sync : team.json manquant ou agent .md manquant → avertissement, le reste est synchronisé', () => {
+test('sync : team.json manquant ou agent .md manquant → avertissement, la team est ignorée, le reste est synchronisé', () => {
   const sb = sandbox();
   try {
     const broken = placeTeam(sb, { name: 'broken', agents: ['lead'] });
@@ -42,8 +42,9 @@ test('sync : team.json manquant ou agent .md manquant → avertissement, le rest
     const r = syncScope(sb.ctx(), 'global');
     const warnings = r.warnings.join('\n');
     assert.match(warnings, /Team « broken » : team\.json introuvable/);
-    assert.match(warnings, /Team « partial » : agents\/gone\.md introuvable/);
-    assert.deepEqual(agentsIn(globalAgents(sb)), ['byt-ok-lead.md', 'byt-partial-lead.md']);
+    // Une team incomplète est revalidée et ignorée en entier.
+    assert.match(warnings, /Team « partial » invalide, agents non synchronisés : agents\/gone\.md : fichier introuvable/);
+    assert.deepEqual(agentsIn(globalAgents(sb)), ['byt-ok-lead.md']);
   } finally {
     sb.cleanup();
   }

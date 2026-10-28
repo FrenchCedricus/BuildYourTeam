@@ -8,6 +8,7 @@ import { isValidName, validateTeam, saveTeam, loadTeam, readAgent, agentPath } f
 import { renderFrontmatter, setFrontmatterField, splitTools } from './frontmatter.mjs';
 import { exists, writeText, tempDirIn, replaceDir, removeDir } from './fsutil.mjs';
 import { syncScope } from './sync.mjs';
+import { trustTeam } from './trust.mjs';
 import { ACCESS_LEVELS, normalizeAccess, normalizeModel, defaultsFor, templatePrompt, isLeadName, accessFromTools } from './roles.mjs';
 
 // Format des données acceptées par new / add-agent :
@@ -23,7 +24,10 @@ import { ACCESS_LEVELS, normalizeAccess, normalizeModel, defaultsFor, templatePr
 
 export function parseData(raw, label = '--data') {
   if (raw === undefined || raw === null) return {};
-  if (typeof raw === 'object') return raw;
+  if (typeof raw === 'object') {
+    if (Array.isArray(raw)) throw errors.invalidJson(label, 'un objet JSON est attendu');
+    return raw;
+  }
   const text = String(raw).replace(/^﻿/, '').trim();
   if (!text) return {};
   try {
@@ -70,8 +74,9 @@ export function buildAgent(spec, { team, goal, isLead = false, teammates = [] })
   const model = resolveModel(spec.model, d.model);
   const tools = resolveTools(spec, access);
   const description = String(spec.description ?? role).trim();
-  const prompt = (spec.prompt && String(spec.prompt).trim()) || templatePrompt({ name: spec.name, role, access, team, goal, isLead, teammates });
-  return { name: spec.name, role, access, model, tools, description, prompt, enabled: spec.enabled !== false, generated: !spec.prompt };
+  const given = spec.prompt ? String(spec.prompt).trim() : '';
+  const prompt = given || templatePrompt({ name: spec.name, role, access, team, goal, isLead, teammates });
+  return { name: spec.name, role, access, model, tools, description, prompt, enabled: spec.enabled !== false, generated: !given };
 }
 
 export function renderAgent(agent) {
@@ -111,7 +116,7 @@ export function createTeam(ctx, data, { scope, base = null, force = false }) {
   const sp = scopePaths(ctx, scope);
   const state = loadState(sp);
   const dest = path.join(sp.teamsDir, name);
-  if ((state.teams[name] || exists(dest)) && !force) throw errors.teamExists(name, scope);
+  if ((Object.hasOwn(state.teams, name) || exists(dest)) && !force) throw errors.teamExists(name, scope);
 
   let specs = data.agents;
   if (specs === undefined && base) specs = base.team.agents.map((a) => ({ name: a.name, enabled: a.enabled }));
@@ -181,6 +186,7 @@ export function createTeam(ctx, data, { scope, base = null, force = false }) {
       ...(base ? { from: base.team.name } : {}),
     };
     saveState(sp, fresh);
+    if (scope === 'project') trustTeam(ctx, dest);
     const sync = syncScope(ctx, scope);
     return {
       team: name,

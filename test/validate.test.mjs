@@ -66,14 +66,14 @@ test('validateTeam : détecte lead absent, frontmatter manquant, noms invalides'
   }
 });
 
-test('validateTeam : avertit si un agent n\'a pas de tools', () => {
+test('validateTeam : un agent sans tools est une erreur (il hériterait de tous les outils)', () => {
   const sb = sandbox();
   try {
     const dir = writeTeam(sb.dirs.registry, { name: 'loose' });
     fs.writeFileSync(path.join(dir, 'agents', 'worker.md'), '---\nname: worker\ndescription: Does work\n---\n\nYou are a worker that does a lot of useful work.\n');
     const r = validateTeam(dir);
-    assert.ok(r.ok);
-    assert.match(r.warnings.join('\n'), /pas de « tools »/);
+    assert.equal(r.ok, false);
+    assert.match(r.errors.join('\n'), /« tools » est obligatoire/);
   } finally {
     sb.cleanup();
   }

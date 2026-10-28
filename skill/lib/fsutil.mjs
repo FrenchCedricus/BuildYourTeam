@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { errors } from './errors.mjs';
+import crypto from 'node:crypto';
+import { BytError, errors } from './errors.mjs';
 
 export function exists(p) {
   return fs.existsSync(p);
@@ -22,12 +23,26 @@ export function readJson(p, fallback) {
   }
 }
 
-// Écriture atomique : on écrit un fichier temporaire puis on le renomme.
+// Vérifie qu'un chemin reste dans son dossier de base (données relues sur le disque non fiables).
+export function assertInside(base, p) {
+  const rel = path.relative(path.resolve(base), path.resolve(p));
+  if (!rel || rel.startsWith('..') || path.isAbsolute(rel)) {
+    throw new BytError('UNSAFE_PATH', `Chemin refusé : « ${p} » sort de « ${base} ».`);
+  }
+  return p;
+}
+
+// Écriture atomique : on écrit un fichier temporaire au nom imprévisible (créé exclusivement), puis on le renomme.
 export function writeText(p, content) {
   fs.mkdirSync(path.dirname(p), { recursive: true });
-  const tmp = `${p}.${process.pid}.tmp`;
-  fs.writeFileSync(tmp, content);
-  fs.renameSync(tmp, p);
+  const tmp = `${p}.${crypto.randomBytes(6).toString('hex')}.tmp`;
+  try {
+    fs.writeFileSync(tmp, content, { flag: 'wx' });
+    fs.renameSync(tmp, p);
+  } catch (e) {
+    fs.rmSync(tmp, { force: true });
+    throw e;
+  }
 }
 
 export function writeJson(p, data) {
